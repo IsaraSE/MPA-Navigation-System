@@ -1,6 +1,6 @@
-# 🌊 EcoMarineWay: low-impact maritime navigation alert system
+# 🌊 EcoMarineWay
 
-> **EcoMarineWay** is a low-impact maritime navigation alert application for ships to navigate safely through marine protected areas (MPAs).
+**EcoMarineWay** is a low-impact maritime navigation alert application for ships to navigate safely through marine protected areas (MPAs).
 
 **Status:** 🚧 Development in progress  
 **Timeline:** 🗓️ Sprint 0 + 4 development sprints (8 weeks)  
@@ -8,8 +8,8 @@
 
 ---
 
-## 📝 Overview
-EcoMarineWay helps ships avoid protected areas, report marine hotspots and pollution, and receive alerts for safe navigation.
+## 📋 Overview
+EcoMarineWay is a lightweight maritime navigation tool designed to help ships safely traverse marine protected areas while supporting community-driven reporting of marine wildlife and pollution incidents. Using Agile Scrum, we are delivering a Minimum Viable Product (MVP) over 8 weeks with a 4-member team.
 
 ---
 
@@ -161,12 +161,19 @@ A feature is considered "Done" when:
 ## 🤝 Stakeholder Engagement
 - Regular demos after each sprint  
 - Feedback incorporated into backlog  
-- Maintain open communication through ClickUp & WhatsApp  
+- Maintain open communication through ClickUp & Slack  
 
 ---
 
 ## 🎯 Conclusion
-EcoMarineWay helps ships navigate safely through MPAs while enabling community-driven reporting of marine wildlife and pollution incidents.  
+Delivering a functional, lightweight maritime navigation tool in 5 sprints is feasible with:
+
+- Clear MVP scope  
+- Lean tech stack (MongoDB, React, Node.js)  
+- Iterative development and continuous feedback  
+- Focused Scrum practices  
+
+By the end of Sprint 4, EcoMarineWay will be production-ready with all core features live, tested, and usable for safe navigation through MPAs.  
 
 ---
 
