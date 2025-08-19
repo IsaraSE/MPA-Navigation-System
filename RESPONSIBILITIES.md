@@ -25,104 +25,257 @@
 
 ---
 
-## 🗓️ Sprint 0 – Setup & Planning
+## 🔌 REST API (initial)
 
-**Sprint Goal:** Establish development environment, project setup, and initial backlog.  
-
-| Member   | Role                   | Responsible Tasks |
-|----------|------------------------|-------------------|
-| Sasmitha | Scrum Master (SM)      | - Organize planning meeting<br>- Set up ClickUp workspace, backlog, and Scrum board<br>- Define sprint events and team alignment |
-| Dinithi  | Product Owner (PO)     | - Define project vision<br>- Create initial backlog in ClickUp<br>- Prioritize features for Sprint 1 |
-| Isara    | Full-Stack Developer   | - Create GitHub repo & branch strategy<br>- Set up MERN skeleton (React + Express + MongoDB Atlas) |
-| Olivia   | Full-Stack Developer   | - Configure CI/CD and deploy skeleton (Netlify/Render)<br>- Design wireframes for core screens (map, report form, login) |
-
-**Deliverables:**
-- Working MERN skeleton deployed online  
-- Wireframes for core features  
-- Initial prioritized product backlog in ClickUp  
+| Method | Path                      | Purpose                                                               | Auth       |
+| ------ | ------------------------- | --------------------------------------------------------------------- | ---------- |
+| POST   | `/api/auth/signup`        | Register user                                                         | Public     |
+| POST   | `/api/auth/login`         | Obtain JWT                                                            | Public     |
+| GET    | `/api/users/me`           | Current user profile                                                  | JWT        |
+| GET    | `/api/mpa`                | List MPA zones (geojson bbox or all)                                  | Public     |
+| POST   | `/api/reports`            | Create report (hotspot/pollution)                                     | JWT        |
+| GET    | `/api/reports`            | List reports (approved + own pending)                                 | Public/JWT |
+| GET    | `/api/reports/:id`        | Get one report                                                        | Public     |
+| PATCH  | `/api/reports/:id/status` | Admin approve/reject                                                  | Admin      |
+| POST   | `/api/alerts/check`       | Send `{lat,lng}` → server returns alert(s) if inside MPA/near hotspot | JWT        |
 
 ---
 
-## 🗓️ Sprint 1 – Core Setup & Map
+## 📍 Frontend Pages
 
-**Sprint Goal:** Enable user access and provide a basic map with MPAs.  
-
-| Member   | Role                   | Responsible Tasks |
-|----------|------------------------|-------------------|
-| Isara    | Scrum Master (SM)      | - Facilitate daily standups<br>- Track progress on ClickUp<br>- Remove blockers |
-| Olivia   | Product Owner (PO)     | - Refine backlog for authentication and map<br>- Prioritize sprint tasks<br>- Confirm acceptance criteria |
-| Sasmitha | Full-Stack Developer   | - Build interactive map with static MPA polygons<br>- Create basic UI layout and navigation |
-| Dinithi  | Full-Stack Developer   | - Implement signup/login (JWT)<br>- Add roles (user/admin)<br>- Write initial test cases for authentication |
-
-**Deliverables:**
-- Users can register/login/logout  
-- Map with visible protected zones  
-- Deployed increment demonstrating login + map  
+* **Public:** Home/Map (view MPAs & markers), Login, Signup.
+* **Authenticated:** Report Form (Hotspot/Pollution), My Profile (my reports), Live Simulate (move marker, see alerts).
+* **Admin:** Simple moderation table (approve/reject reports).
 
 ---
 
-## 🗓️ Sprint 2 – Reporting Features
+## 🗓️ Sprint Plans
 
-**Sprint Goal:** Allow users to report and view hotspots and pollution incidents.  
-
-| Member   | Role                   | Responsible Tasks |
-|----------|------------------------|-------------------|
-| Olivia   | Scrum Master (SM)      | - Lead Scrum ceremonies<br>- Monitor sprint tasks<br>- Support developers in removing blockers |
-| Sasmitha | Product Owner (PO)     | - Prioritize reporting features<br>- Update backlog with stakeholder feedback<br>- Approve acceptance criteria |
-| Isara    | Full-Stack Developer   | - Build hotspot reporting form (location + species + notes)<br>- Display hotspot markers on map |
-| Dinithi  | Full-Stack Developer   | - Implement pollution report form (location + description)<br>- Create list view of reports<br>- Add backend APIs for reports |
-
-**Deliverables:**
-- Hotspot reports visible on map  
-- Pollution reports created and listed  
-- Database stores reports reliably  
+> **Timebox:** 1–2 weeks per sprint. Each sprint includes planning, daily stand-ups, review, and retrospective.
 
 ---
 
-## 🗓️ Sprint 3 – Alerts & Filtering
+### 🗓️ Sprint 0 — Setup & Planning
 
-**Sprint Goal:** Improve usability with alerts and filtering.  
+**Sprint Goal:** Environments ready; skeleton apps deploy; initial backlog.
 
-| Member   | Role                   | Responsible Tasks |
-|----------|------------------------|-------------------|
-| Sasmitha | Scrum Master (SM)      | - Facilitate daily Scrum<br>- Track burndown chart<br>- Ensure sprint progress |
-| Dinithi  | Product Owner (PO)     | - Refine backlog for alerts and filtering<br>- Clarify requirements for proximity alerts<br>- Approve filtering features |
-| Isara    | Full-Stack Developer   | - Implement simulated vessel path with moving marker<br>- Improve report details (click marker to view info) |
-| Olivia   | Full-Stack Developer   | - Add proximity alerts when vessel nears hotspots/MPAs<br>- Add map filtering (toggle hotspots/pollution)<br>- Test alert functionality |
+**Backend (Isara)**
 
-**Deliverables:**
-- Vessel marker moves along a path  
-- Alerts shown when entering protected zones/hotspots  
-- Filter buttons working on map  
-- Usable clickable markers  
+* [ ] Create Node/Express project scaffold (`/server`).
+* [ ] Connect to **MongoDB Atlas** via env vars.
+* [ ] Health endpoint `GET /health`.
+* [ ] Seed script for 1–2 demo MPA polygons (GeoJSON) using **turf** types.
+* [ ] CI: run `npm test`, `npm run lint`.
+
+**Frontend (Olivia)**
+
+* [ ] Create React + Vite app (`/web`) with Tailwind.
+* [ ] Install Leaflet; render base map (OpenStreetMap tiles).
+* [ ] Project layout (Navbar, Container, Footer).
+* [ ] CI: build check.
+
+**Process (Sasmitha, Dinithi)**
+
+* [ ] ClickUp: space, lists (Product Backlog, Sprint Backlog, Bugs).
+* [ ] Define **DoD**, **Definition of Ready**, working agreements.
+* [ ] Release plan + risk log.
+
+**Deliverables**
+
+* ✅ BE & FE skeleton deployed (Render/Railway & Netlify).
+* ✅ ClickUp board with initial epics/stories and priorities.
+* ✅ Repo README with run scripts & environment setup.
+
+**Acceptance Criteria**
+
+* App URLs accessible publicly; `/health` returns 200.
+* Base map loads in FE deploy.
 
 ---
 
-## 🗓️ Sprint 4 – Polishing & Finalization
+### 🗓️ Sprint 1 — Authentication & Static Map
 
-**Sprint Goal:** Refine the system, add profile view, and prepare for presentation.  
+**Sprint Goal:** Users can sign up/login; map shows MPA zones.
 
-| Member   | Role                   | Responsible Tasks |
-|----------|------------------------|-------------------|
-| Isara    | Scrum Master (SM)      | - Facilitate sprint review & retrospective<br>- Track final sprint tasks<br>- Prepare team for final demo |
-| Olivia   | Product Owner (PO)     | - Approve final backlog<br>- Coordinate presentation prep<br>- Collect final feedback |
-| Sasmitha | Full-Stack Developer   | - Add basic user profile page (list of user’s submitted reports)<br>- Fix bugs<br>- Improve UI styling |
-| Dinithi  | Full-Stack Developer   | - Optimize backend for performance<br>- Write documentation for features<br>- Ensure final deployment<br>- Prepare burndown charts & logs |
+**Backend (Isara)**
 
-**Deliverables:**
-- Final integrated system (map + reports + alerts + filters)  
-- User profile page functional  
-- Polished UI and bug-free demo  
-- Final report, presentation slides, and Scrum evidence  
+* [ ] `/api/auth/signup`, `/api/auth/login` with JWT.
+* [ ] `/api/users/me` (JWT).
+* [ ] `/api/mpa` returns seeded polygons (GeoJSON).
+* [ ] Unit tests: auth & mpa (Jest + Supertest).
+* [ ] Input validation (express-validator/Zod).
+
+**Frontend (Olivia)**
+
+* [ ] Auth pages (Signup/Login) with form validation.
+* [ ] JWT storage (httpOnly cookie or localStorage + interceptor).
+* [ ] Protected route for “Report” & “Profile”.
+* [ ] Leaflet: render MPA polygons; legend & basic controls.
+
+**Scrum (Sasmitha)**
+
+* [ ] Daily standups, burndown chart, impediment tracking.
+
+**Product (Dinithi)**
+
+* [ ] Refine acceptance criteria for auth & map stories.
+* [ ] Define simple roles: `user`, `admin`.
+
+**Deliverables**
+
+* ✅ Register/login/logout works end-to-end.
+* ✅ MPA polygons visible on the map.
+* ✅ Deployed increment demonstrating auth + map.
+
+**Acceptance Criteria**
+
+* New user can sign up, log in, refresh page, stays authenticated.
+* MPA polygons load within 2s on typical campus Wi-Fi.
+
+---
+
+### 🗓️ Sprint 2 — Reporting (Hotspots & Pollution)
+
+**Sprint Goal:** Users submit/view reports; DB stores & lists them.
+
+**Backend (Isara)**
+
+* [ ] `POST /api/reports` (validate payload, attach user).
+* [ ] `GET /api/reports` (filters: type, bbox; approved + own pending).
+* [ ] `GET /api/reports/:id`.
+* [ ] Admin `PATCH /api/reports/:id/status`.
+* [ ] Image upload stub (optional v1: URLs only).
+* [ ] Tests: create/list/status change.
+
+**Frontend (Olivia)**
+
+* [ ] Report form (Hotspot: species+notes; Pollution: description).
+* [ ] Map click → prefill lat/lng in form.
+* [ ] Markers layer for reports; popup with details.
+* [ ] “My Reports” table in Profile (status badges).
+
+**Scrum (Sasmitha)**
+
+* [ ] Enforce DoD; track test coverage trend.
+
+**Product (Dinithi)**
+
+* [ ] Approve UX copy, fields, moderation flow.
+* [ ] Stakeholder check-in; backlog updates.
+
+**Deliverables**
+
+* ✅ Create & list hotspot/pollution reports.
+* ✅ Map markers for reports with popups.
+* ✅ Admin can approve/reject.
+
+**Acceptance Criteria**
+
+* Invalid submissions are rejected with clear messages.
+* Approved reports appear on public map; pending visible only to owner.
+
+---
+
+### 🗓️ Sprint 3 — Alerts & Map Filtering
+
+**Sprint Goal:** Show proximity/zone alerts; improve map usability.
+
+**Backend (Isara)**
+
+* [ ] `POST /api/alerts/check` receives `{lat,lng}`.
+* [ ] Server uses **turf.js**: inside MPA or within 500m of hotspot → returns alert payload.
+* [ ] Configurable threshold via env var.
+* [ ] Tests for geometry logic.
+
+**Frontend (Olivia)**
+
+* [ ] “Simulate Vessel” page: play/pause path, moving marker.
+* [ ] On position change → call `/alerts/check` → toast/banner alert.
+* [ ] Filters: toggle layers (MPAs / Hotspots / Pollution).
+* [ ] Marker detail panel (click → expanded info).
+
+**Scrum/Product (Sasmitha/Dinithi)**
+
+* [ ] Track burndown; refine alert UX acceptance criteria.
+
+**Deliverables**
+
+* ✅ Moving vessel marker demo.
+* ✅ Real-time alerts when entering MPAs/near hotspots.
+* ✅ Layer filter controls.
+
+**Acceptance Criteria**
+
+* Alert shown within 500ms of position update (mocked path).
+* Filters persist while navigating pages.
+
+---
+
+### 🗓️ Sprint 4 — Profiles, Polish, Docs & Demo
+
+**Sprint Goal:** Finalize UX, profiles, performance, and documentation.
+
+**Backend (Isara)**
+
+* [ ] `/api/users/me` returns user’s reports summary.
+* [ ] Simple caching headers for static MPA.
+* [ ] Pagination on list endpoints.
+
+**Frontend (Olivia)**
+
+* [ ] Profile page: list user’s submissions; quick links to map.
+* [ ] UI polish: empty states, loading skeletons, error toasts.
+* [ ] Basic accessibility pass (labels, keyboard nav).
+
+**Scrum (Sasmitha)**
+
+* [ ] Sprint review & retro, final burndown & velocity snapshot.
+
+**Product (Dinithi)**
+
+* [ ] Final acceptance, demo script, slide deck, README/docs.
+
+**Deliverables**
+
+* ✅ Final integrated system (map + reports + alerts + filters).
+* ✅ Profile page & polished UI.
+* ✅ Final report, slides, and Scrum evidence (screenshots of board, burndown, commits).
+
+**Acceptance Criteria**
+
+* Happy path demo runs without errors on deployed URLs.
+* README includes setup, .env examples, and API docs.
 
 ---
 
 ## ✅ Definition of Done (DoD)
 
-A backlog item is Done when:
+A story is **Done** when:
 
-- Code is reviewed and merged into main branch  
-- Tests (unit + integration) are completed  
-- Feature works smoothly on desktop and mobile  
-- Deployed to staging and verified by the team  
-- Documentation updated with usage instructions  
+* Code merged to `main` via PR with review and passing CI.
+* Unit/integration tests cover key paths (≥ minimal agreed coverage).
+* UX validated against acceptance criteria on **desktop & mobile** widths.
+* Deployed to staging (Netlify + Render) and verified by the team.
+* Documentation updated (README, `/docs`, API examples).
+* No critical console or server errors.
+
+---
+
+## 🧭 Risks & Mitigations
+
+* **Map performance with many markers:** Use clustering; server pagination/filters.
+* **Geometry accuracy:** Use turf.js, test boundary cases.
+* **Auth pitfalls:** Use JWT expiry/refresh pattern; guard protected routes.
+* **Free-tier limits:** Keep payloads small; static MPA; image uploads optional.
+
+---
+
+## 🚫 Out of Scope (v1)
+
+* Real vessel AIS integration (use simulated paths only).
+* Offline support; advanced analytics; push notifications.
+* Complex moderation workflows.
+
+---
+
+
