@@ -1,120 +1,18 @@
 # EcoMarineWay: Team Roles & Sprint Responsibilities
 
-**Members:** Sasmitha, Isara, Dinithi, Olivia
-
-**Purpose:**
-This document defines clear, simple responsibilities for each team member across Sprint 0 + 4 development sprints (bi-weekly sprints). It keeps accountability clear while allowing role rotation for the Product Owner (PO) and Scrum Master (SM).
-
----
-
-## 🧩 Team Roles (overview)
-
-* **Product Owner (PO)** – owns product vision, prioritizes backlog, and manages stakeholder feedback.
-* **Scrum Master (SM)** – runs Scrum events, removes blockers, and keeps the team on process.
-* **Full‑Stack Developer (Dev)** – implements features, writes tests, and helps with deployment.
-
-> Note: Only two members are hands-on developers in each sprint, but everyone helps with testing, documentation and demos.
+**Team Members:** Sasmitha, Isara, Dinithi, Olivia  
+**Project:** 5-Sprint Agile Development (Sprint 0 + 4 development sprints)  
+**Goal:** Build a Minimum Viable Product (MVP) for Marine Protected Area (MPA) navigation, reporting, and alerts.  
 
 ---
 
-## 📅 Sprint assignments (2-week sprints)
+## 🧩 Overview: Team Roles & Responsibilities
 
-Each sprint block lists the PO, SM and the two active developers plus short responsibilities tied to the sprint goals.
-
-### Sprint 0 – Planning & Setup
-
-**PO:** Dinithi
-**SM:** Sasmitha
-**Devs:** Isara, Olivia
-
-**Responsibilities:**
-
-* **Dinithi (PO):** define MVP scope for the sprint, prioritize backlog items for Sprint 1, gather stakeholder requirements, approve wireframes.
-* **Sasmitha (SM):** set up ClickUp board, run Sprint 0 planning and backlog grooming sessions, ensure CI/CD and repo rules are decided.
-* **Isara (Dev):** initialize the MERN skeleton, create initial repo structure, push basic frontend and backend scaffolding.
-* **Olivia (Dev):** set up MongoDB Atlas project, configure environment variables, deploy initial skeleton to Netlify/Render.
-
-**Sprint 0 Deliverables:** repo + branch strategy, MERN skeleton deployed, wireframes, prioritized backlog.
-
----
-
-### Sprint 1 – Core Setup & Map
-
-**PO:** Olivia
-**SM:** Isara
-**Devs:** Sasmitha, Dinithi
-
-**Responsibilities:**
-
-* **Olivia (PO):** finalize acceptance criteria for auth and map; review demo and accept or log changes.
-* **Isara (SM):** run daily standups, unblock devs, track Sprint progress and tests for auth flows.
-* **Sasmitha (Dev):** implement user signup/login (JWT) and roles; write basic auth tests.
-* **Dinithi (Dev):** integrate interactive map and static MPA polygons; ensure map loads and markers display.
-
-**Sprint 1 Deliverables:** working auth flows, basic map with protected zones, deployed increment.
-
----
-
-### Sprint 2 – Reporting Features
-
-**PO:** Sasmitha
-**SM:** Dinithi
-**Devs:** Isara, Olivia
-
-**Responsibilities:**
-
-* **Sasmitha (PO):** define report fields and acceptance criteria (hotspot & pollution), decide required validations.
-* **Dinithi (SM):** coordinate API contract, ensure backend endpoints are ready, run integration checks.
-* **Isara (Dev):** build hotspot reporting form and map marker flow; implement frontend validations.
-* **Olivia (Dev):** create backend APIs for reports, persist reports to MongoDB, add list view endpoint.
-
-**Sprint 2 Deliverables:** report forms, backend APIs, markers/list view visible on map.
-
----
-
-### Sprint 3 – Alerts & Filtering
-
-**PO:** Isara
-**SM:** Olivia
-**Devs:** Sasmitha, Dinithi
-
-**Responsibilities:**
-
-* **Isara (PO):** set proximity alert rules and UX expectations; approve demo behaviour.
-* **Olivia (SM):** ensure simulated vessel flow works in staging and lead testing sessions.
-* **Sasmitha (Dev):** implement vessel marker simulation, UI for alerts and popups.
-* **Dinithi (Dev):** add map filters and clickable marker details; connect alerts to report data.
-
-**Sprint 3 Deliverables:** moving vessel simulation, functioning proximity alerts, map filters, info popups.
-
----
-
-### Sprint 4 – Polishing & Finalization
-
-**PO:** Dinithi
-**SM:** Sasmitha
-**Devs:** Isara, Olivia
-
-**Responsibilities:**
-
-* **Dinithi (PO):** approve final acceptance for profile & reports pages; collect final stakeholder feedback.
-* **Sasmitha (SM):** run final sprint ceremonies, coordinate bug-fix priorities, and prepare demo checklist.
-* **Isara (Dev):** build basic user profile page (user’s reports) and finalize unit tests for frontend.
-* **Olivia (Dev):** polish backend endpoints, run staging deployment, prepare migration/data snapshots for demo.
-
-**Sprint 4 Deliverables:** polished UI, user profile, tested system, final demo materials and presentation evidence.
-
----
-
-## ✅ Definition of Done (DoD) (team-wide)
-
-A backlog item is Done when:
-
-* Code is peer-reviewed and merged to main (or merge branch)
-* Unit and integration tests pass or test plan documented
-* Feature is responsive and accessible
-* Feature is deployed to staging for QA
-* Documentation (README or wiki) updated with usage notes
+| Role                  | General Responsibilities |
+|-----------------------|---------------------------|
+| **Product Owner (PO)** | Defines the project vision, manages and prioritizes the product backlog, makes sure features match stakeholder needs |
+| **Scrum Master (SM)** | Facilitates Scrum meetings (planning, daily standups, reviews, retrospectives), supports the team, removes obstacles, ensures Scrum rules are followed |
+| **Full-Stack Developer** | Builds and connects both frontend (React) and backend (Node.js + MongoDB), integrates APIs, tests features, and ensures the app works as expected |
 
 ---
 
@@ -125,16 +23,104 @@ A backlog item is Done when:
 
 ---
 
-## 📣 Communication & Tools
+## 🗓️ Sprint 0 – Setup & Planning
 
-* **Daily updates:** 15-minute standups on working days (3 days/week)
-* **Primary tools:** ClickUp (tasks), GitHub (code), Slack/Discord (chat), Figma (wireframes)
-* **Demo:** each sprint review includes a 5–10 minute demo + feedback capture in ClickUp
+**Sprint Goal:** Prepare the development environment, agree on the vision, and set up the initial backlog.  
+
+| Member   | Role                   | Responsible Tasks |
+|----------|------------------------|-------------------|
+| Sasmitha | Scrum Master (SM)      | - Organize planning meeting<br>- Define sprint schedule and Scrum events<br>- Make sure team understands Agile roles |
+| Dinithi  | Product Owner (PO)     | - Write project vision statement<br>- Draft initial product backlog<br>- Prioritize features for Sprint 1 |
+| Isara    | Full-Stack Developer   | - Set up MERN project structure<br>- Configure MongoDB Atlas<br>- Connect backend with frontend starter code |
+| Olivia   | Full-Stack Developer   | - Deploy skeleton app online (Heroku/Render)<br>- Set up CI/CD pipeline<br>- Create simple wireframes for core screens |
+
+**Deliverables:**
+- Deployed MERN project skeleton  
+- Wireframes for login, map, and reporting forms  
+- Initial prioritized product backlog in ClickUp  
 
 ---
 
-## ✍️ Final notes
+## 🗓️ Sprint 1 – Core Setup & Map
 
-* Keep responsibilities light and focused for each two-week sprint.
-* If a team member is blocked for more than a day, escalate to the SM immediately.
-* Use MoSCoW priority: Must / Should / Could / Won't for quick backlog decisions.
+**Sprint Goal:** Allow user login and show a map with Marine Protected Areas (MPAs).  
+
+| Member   | Role                   | Responsible Tasks |
+|----------|------------------------|-------------------|
+| Isara    | Scrum Master (SM)      | - Run daily standups<br>- Track progress on ClickUp<br>- Remove blockers |
+| Olivia   | Product Owner (PO)     | - Refine backlog for authentication and map features<br>- Prioritize user stories<br>- Check stakeholder expectations |
+| Sasmitha | Full-Stack Developer   | - Build map UI<br>- Show static polygons for MPAs<br>- Create basic navigation layout |
+| Dinithi  | Full-Stack Developer   | - Implement user authentication (JWT)<br>- Create user roles<br>- Connect backend login with frontend |
+
+**Deliverables:**
+- Login, logout, and register features working  
+- Map displays protected zones  
+- Deployed increment showing login + map  
+
+---
+
+## 🗓️ Sprint 2 – Reporting Features
+
+**Sprint Goal:** Let users report hotspots and pollution incidents, and view them on the map.  
+
+| Member   | Role                   | Responsible Tasks |
+|----------|------------------------|-------------------|
+| Olivia   | Scrum Master (SM)      | - Lead Scrum ceremonies<br>- Monitor sprint tasks<br>- Help resolve blockers |
+| Sasmitha | Product Owner (PO)     | - Prioritize reporting features<br>- Update backlog based on feedback<br>- Approve acceptance criteria |
+| Isara    | Full-Stack Developer   | - Create hotspot reporting form<br>- Show hotspot markers on map<br>- Test form submissions |
+| Dinithi  | Full-Stack Developer   | - Create pollution report form<br>- Build list view of reports<br>- Implement backend APIs for reports |
+
+**Deliverables:**
+- Hotspot reports visible on map  
+- Pollution reports created and listed  
+- Database stores reports reliably  
+
+---
+
+## 🗓️ Sprint 3 – Alerts & Filtering
+
+**Sprint Goal:** Add alert notifications and improve usability with filtering.  
+
+| Member   | Role                   | Responsible Tasks |
+|----------|------------------------|-------------------|
+| Sasmitha | Scrum Master (SM)      | - Facilitate daily Scrum<br>- Track burndown<br>- Support developers |
+| Dinithi  | Product Owner (PO)     | - Refine backlog for alerts/filtering<br>- Clarify requirements for proximity alerts<br>- Approve filtering design |
+| Isara    | Full-Stack Developer   | - Add vessel simulation marker<br>- Make report markers clickable<br>- Show detailed info when clicked |
+| Olivia   | Full-Stack Developer   | - Add proximity alerts when vessel enters MPA<br>- Add filter options for reports<br>- Test alert system |
+
+**Deliverables:**
+- Moving vessel marker  
+- Alerts for entering MPAs  
+- Working filters on map  
+- Clickable report markers with details  
+
+---
+
+## 🗓️ Sprint 4 – Polishing & Finalization
+
+**Sprint Goal:** Refine the system, add user profiles, and prepare the final demo.  
+
+| Member   | Role                   | Responsible Tasks |
+|----------|------------------------|-------------------|
+| Isara    | Scrum Master (SM)      | - Facilitate sprint review and retrospective<br>- Track final sprint tasks<br>- Ensure readiness for demo |
+| Olivia   | Product Owner (PO)     | - Approve final backlog<br>- Coordinate demo presentation<br>- Gather final feedback |
+| Sasmitha | Full-Stack Developer   | - Build user profile page<br>- Fix UI bugs<br>- Refine frontend design |
+| Dinithi  | Full-Stack Developer   | - Optimize backend for performance<br>- Ensure final deployment<br>- Fix remaining bugs |
+
+**Deliverables:**
+- Final working system (map + reports + alerts + filters)  
+- User profile page completed  
+- Polished, bug-free demo ready  
+- Final report, presentation slides, and Scrum evidence  
+
+---
+
+## ✅ Definition of Done (DoD)
+
+A backlog item is Done when:
+
+- Code is reviewed and merged into main branch  
+- Tests (unit + integration) are completed  
+- Feature works smoothly on desktop and mobile  
+- Deployed to staging and verified by the team  
+- Documentation updated with usage instructions  
