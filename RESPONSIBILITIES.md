@@ -86,7 +86,7 @@
 ---
 
 ### 🗓️ Sprint 1 — Authentication & Static Map  
-**PO = Isara | SM = Dinithi**
+**PO = Isara | SM = Olivea**
 
 **Sprint Goal:** Users can sign up/login; map shows MPA zones.
 
@@ -143,7 +143,7 @@
 ---
 
 ### 🗓️ Sprint 3 — Alerts & Map Filtering  
-**PO = Dinithi | SM = Isara**
+**PO = Dinithi | SM = Olivea**
 
 **Sprint Goal:** Show proximity/zone alerts; improve map usability.
 
