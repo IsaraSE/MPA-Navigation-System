@@ -113,6 +113,8 @@
 
 ---
 
+(‼ We will be updating the scope of sprint 2 after re-evaluating the sprint 1 ‼)
+
 ### 🗓️ Sprint 2 — Reporting (Hotspots & Pollution)  
 **PO = Sasmitha | SM = Olivia**
 
