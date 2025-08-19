@@ -55,7 +55,7 @@
 
 ---
 
-### 🗓️ Sprint 0 — Setup & Planning
+### 🗓️ Sprint 0 — Setup & Planning (1 week) [ 9th of August - 16th of August ]
 **PO = Dinithi | SM = Sasmitha**
 
 **Sprint Goal:** Environments ready; skeleton apps deploy; initial backlog.
@@ -85,7 +85,7 @@
 
 ---
 
-### 🗓️ Sprint 1 — Authentication & Static Map  
+### 🗓️ Sprint 1 — Authentication & Static Map - (2 weeks) [ 16th of August - 30th of August ]
 **PO = Isara | SM = Olivea**
 
 **Sprint Goal:** Users can sign up/login; map shows MPA zones.
