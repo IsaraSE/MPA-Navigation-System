@@ -51,231 +51,180 @@
 
 ## 🗓️ Sprint Plans
 
-> **Timebox:** 1–2 weeks per sprint. Each sprint includes planning, daily stand-ups, review, and retrospective.
+> **Timebox:** 1–2 weeks per sprint. Each sprint includes planning, daily stand-ups, review, and retrospective.  
 
 ---
 
 ### 🗓️ Sprint 0 — Setup & Planning
+**PO = Dinithi | SM = Sasmitha**
 
 **Sprint Goal:** Environments ready; skeleton apps deploy; initial backlog.
 
-**Backend (Isara)**
+**Backend Initialisation (Isara)**  
+* Create Node/Express project
+* Connect to **MongoDB Atlas** via env vars.  
+* Health endpoint `GET /health`.  
+* Seed script for demo MPA polygons (GeoJSON).  
+* CI: run `npm test`, `npm run lint`.  
 
-* [ ] Create Node/Express project scaffold (`/server`).
-* [ ] Connect to **MongoDB Atlas** via env vars.
-* [ ] Health endpoint `GET /health`.
-* [ ] Seed script for 1–2 demo MPA polygons (GeoJSON) using **turf** types.
-* [ ] CI: run `npm test`, `npm run lint`.
+**Frontend Initialisation (Olivia)**  
+* Create a React app with Tailwind.  
+* Install Leaflet; render base map (OpenStreetMap tiles).  
+* Project layout (Navbar, Container, Footer).  
+* CI: build check.  
 
-**Frontend (Olivia)**
+**Process (SM + PO)**  
+* ClickUp: space, lists (Product Backlog, Sprint Backlog, Bugs).  
+* Define **DoD**, **Definition of Ready**, working agreements.  
+* Release plan + risk log.  
 
-* [ ] Create React + Vite app (`/web`) with Tailwind.
-* [ ] Install Leaflet; render base map (OpenStreetMap tiles).
-* [ ] Project layout (Navbar, Container, Footer).
-* [ ] CI: build check.
-
-**Process (Sasmitha, Dinithi)**
-
-* [ ] ClickUp: space, lists (Product Backlog, Sprint Backlog, Bugs).
-* [ ] Define **DoD**, **Definition of Ready**, working agreements.
-* [ ] Release plan + risk log.
-
-**Deliverables**
-
-* ✅ BE & FE skeleton deployed (Render/Railway & Netlify).
-* ✅ ClickUp board with initial epics/stories and priorities.
-* ✅ Repo README with run scripts & environment setup.
-
-**Acceptance Criteria**
-
-* App URLs accessible publicly; `/health` returns 200.
-* Base map loads in FE deploy.
+**Deliverables:**  
+- BE & FE skeleton deployed (Render/Railway & Netlify).  
+- ClickUp board with epics/stories and priorities.  
+- Repo README with run scripts & env setup.  
 
 ---
 
-### 🗓️ Sprint 1 — Authentication & Static Map
+### 🗓️ Sprint 1 — Authentication & Static Map  
+**PO = Isara | SM = Dinithi**
 
 **Sprint Goal:** Users can sign up/login; map shows MPA zones.
 
-**Backend (Isara)**
+**Map Integration (Sasmitha)**  
+* `/api/mpa` returns seeded polygons (GeoJSON).  
+* Unit tests (auth + mpa).
+* Leaflet renders MPA polygons with legend.  
 
-* [ ] `/api/auth/signup`, `/api/auth/login` with JWT.
-* [ ] `/api/users/me` (JWT).
-* [ ] `/api/mpa` returns seeded polygons (GeoJSON).
-* [ ] Unit tests: auth & mpa (Jest + Supertest).
-* [ ] Input validation (express-validator/Zod).
+**User Management Features (Olivia)** 
+* Auth pages (Signup/Login) with validation.
+* `/api/auth/signup`, `/api/auth/login` with JWT.  
+* `/api/users/me` (JWT).    
+* JWT storage + protected routes.   
 
-**Frontend (Olivia)**
+**Scrum (SM)**  
+* Facilitate daily standups, burndown, and remove blockers.  
 
-* [ ] Auth pages (Signup/Login) with form validation.
-* [ ] JWT storage (httpOnly cookie or localStorage + interceptor).
-* [ ] Protected route for “Report” & “Profile”.
-* [ ] Leaflet: render MPA polygons; legend & basic controls.
+**Product (PO)**  
+* Refine acceptance criteria for auth & map stories.  
 
-**Scrum (Sasmitha)**
-
-* [ ] Daily standups, burndown chart, impediment tracking.
-
-**Product (Dinithi)**
-
-* [ ] Refine acceptance criteria for auth & map stories.
-* [ ] Define simple roles: `user`, `admin`.
-
-**Deliverables**
-
-* ✅ Register/login/logout works end-to-end.
-* ✅ MPA polygons visible on the map.
-* ✅ Deployed increment demonstrating auth + map.
-
-**Acceptance Criteria**
-
-* New user can sign up, log in, refresh page, stays authenticated.
-* MPA polygons load within 2s on typical campus Wi-Fi.
+**Deliverables:**  
+- Register/login/logout works end-to-end.  
+- MPA polygons visible on the map.  
 
 ---
 
-### 🗓️ Sprint 2 — Reporting (Hotspots & Pollution)
+### 🗓️ Sprint 2 — Reporting (Hotspots & Pollution)  
+**PO = Sasmitha | SM = Olivia**
 
 **Sprint Goal:** Users submit/view reports; DB stores & lists them.
 
-**Backend (Isara)**
+**User reporting feature (Isara)**  
+* `POST /api/reports`, `GET /api/reports`, `GET /api/reports/:id`.  
+* Admin approval API.  
+* Tests: create/list/status change.  
 
-* [ ] `POST /api/reports` (validate payload, attach user).
-* [ ] `GET /api/reports` (filters: type, bbox; approved + own pending).
-* [ ] `GET /api/reports/:id`.
-* [ ] Admin `PATCH /api/reports/:id/status`.
-* [ ] Image upload stub (optional v1: URLs only).
-* [ ] Tests: create/list/status change.
+**Frontend (Olivia)**  
+* Report form (Hotspot + Pollution).  
+* Map click → prefill location.
+* Marker layer for reports + popup details.  
+* Profile: “My Reports” table with status.  
 
-**Frontend (Olivia)**
+**Scrum (SM)**  
+* Track sprint progress, remove blockers.  
 
-* [ ] Report form (Hotspot: species+notes; Pollution: description).
-* [ ] Map click → prefill lat/lng in form.
-* [ ] Markers layer for reports; popup with details.
-* [ ] “My Reports” table in Profile (status badges).
+**Product (PO)**  
+* Approve UX flow, update backlog.  
 
-**Scrum (Sasmitha)**
-
-* [ ] Enforce DoD; track test coverage trend.
-
-**Product (Dinithi)**
-
-* [ ] Approve UX copy, fields, moderation flow.
-* [ ] Stakeholder check-in; backlog updates.
-
-**Deliverables**
-
-* ✅ Create & list hotspot/pollution reports.
-* ✅ Map markers for reports with popups.
-* ✅ Admin can approve/reject.
-
-**Acceptance Criteria**
-
-* Invalid submissions are rejected with clear messages.
-* Approved reports appear on public map; pending visible only to owner.
+**Deliverables:**  
+- Create & list hotspot/pollution reports.  
+- Map markers with popups.  
+- Admin approval working.  
 
 ---
 
-### 🗓️ Sprint 3 — Alerts & Map Filtering
+### 🗓️ Sprint 3 — Alerts & Map Filtering  
+**PO = Dinithi | SM = Isara**
 
 **Sprint Goal:** Show proximity/zone alerts; improve map usability.
 
-**Backend (Isara)**
+**Backend (Isara)**  
+* `/api/alerts/check` with turf.js.  
+* Return alerts if inside MPA or near a hotspot
+* Geometry tests.  
 
-* [ ] `POST /api/alerts/check` receives `{lat,lng}`.
-* [ ] Server uses **turf.js**: inside MPA or within 500m of hotspot → returns alert payload.
-* [ ] Configurable threshold via env var.
-* [ ] Tests for geometry logic.
+**Frontend (Olivia)**  
+* Vessel simulation page (play/pause).  
+* On position change → call `/alerts/check` → show alert.  
+* Filters for toggling layers.  
+* Marker detail panel.  
 
-**Frontend (Olivia)**
+**Scrum (SM)**  
+* Facilitate sprint events, track burndown.  
 
-* [ ] “Simulate Vessel” page: play/pause path, moving marker.
-* [ ] On position change → call `/alerts/check` → toast/banner alert.
-* [ ] Filters: toggle layers (MPAs / Hotspots / Pollution).
-* [ ] Marker detail panel (click → expanded info).
+**Product (PO)**  
+* Define alert UX, approve filtering requirements.  
 
-**Scrum/Product (Sasmitha/Dinithi)**
-
-* [ ] Track burndown; refine alert UX acceptance criteria.
-
-**Deliverables**
-
-* ✅ Moving vessel marker demo.
-* ✅ Real-time alerts when entering MPAs/near hotspots.
-* ✅ Layer filter controls.
-
-**Acceptance Criteria**
-
-* Alert shown within 500ms of position update (mocked path).
-* Filters persist while navigating pages.
+**Deliverables:**  
+- Moving vessel marker demo.  
+- Real-time alerts.  
+- Map filtering.  
 
 ---
 
-### 🗓️ Sprint 4 — Profiles, Polish, Docs & Demo
+### 🗓️ Sprint 4 — Profiles, Polish, Docs & Demo  
+**PO = Isara | SM = Sasmitha**
 
-**Sprint Goal:** Finalize UX, profiles, performance, and documentation.
+**Sprint Goal:** Finalise UX, profiles, performance, and documentation.
 
-**Backend (Isara)**
+**Backend (Isara)**  
+* `/api/users/me` returns user’s reports summary.  
+* Pagination + caching for MPAs.  
 
-* [ ] `/api/users/me` returns user’s reports summary.
-* [ ] Simple caching headers for static MPA.
-* [ ] Pagination on list endpoints.
+**Frontend (Olivia)**  
+* Profile page: user’s reports list.  
+* UI polish (empty states, error handling).  
+* Accessibility checks.  
 
-**Frontend (Olivia)**
+**Scrum (SM)**  
+* Sprint review & retrospective.  
+* Final burndown & velocity snapshot.  
 
-* [ ] Profile page: list user’s submissions; quick links to map.
-* [ ] UI polish: empty states, loading skeletons, error toasts.
-* [ ] Basic accessibility pass (labels, keyboard nav).
+**Product (PO)**  
+* Final acceptance, demo prep, documentation review.  
 
-**Scrum (Sasmitha)**
-
-* [ ] Sprint review & retro, final burndown & velocity snapshot.
-
-**Product (Dinithi)**
-
-* [ ] Final acceptance, demo script, slide deck, README/docs.
-
-**Deliverables**
-
-* ✅ Final integrated system (map + reports + alerts + filters).
-* ✅ Profile page & polished UI.
-* ✅ Final report, slides, and Scrum evidence (screenshots of board, burndown, commits).
-
-**Acceptance Criteria**
-
-* Happy path demo runs without errors on deployed URLs.
-* README includes setup, .env examples, and API docs.
+**Deliverables:**  
+- Final integrated system (map + reports + alerts + filters).  
+- Profile page working.  
+- Final docs, slides, and Scrum evidence.  
 
 ---
 
 ## ✅ Definition of Done (DoD)
 
-A story is **Done** when:
-
-* Code merged to `main` via PR with review and passing CI.
-* Unit/integration tests cover key paths (≥ minimal agreed coverage).
-* UX validated against acceptance criteria on **desktop & mobile** widths.
-* Deployed to staging (Netlify + Render) and verified by the team.
-* Documentation updated (README, `/docs`, API examples).
-* No critical console or server errors.
+A story is **Done** when:  
+* Code merged to `main` via PR with review and passing CI.  
+* Tests (unit/integration) cover key paths.  
+* UX validated on desktop & mobile.  
+* Deployed to staging (Netlify + Render).  
+* Documentation updated (README, API docs).  
+* No critical console/server errors.  
 
 ---
 
 ## 🧭 Risks & Mitigations
 
-* **Map performance with many markers:** Use clustering; server pagination/filters.
-* **Geometry accuracy:** Use turf.js, test boundary cases.
-* **Auth pitfalls:** Use JWT expiry/refresh pattern; guard protected routes.
-* **Free-tier limits:** Keep payloads small; static MPA; image uploads optional.
+* **Map performance:** Use clustering & pagination.  
+* **Geometry accuracy:** Use turf.js + tests.  
+* **Auth pitfalls:** JWT expiry, protected routes.  
+* **Free-tier limits:** Small payloads, optional image upload.  
 
 ---
 
 ## 🚫 Out of Scope (v1)
 
-* Real vessel AIS integration (use simulated paths only).
-* Offline support; advanced analytics; push notifications.
-* Complex moderation workflows.
+* Real vessel AIS data (use simulated path only).  
+* Offline support & advanced analytics.  
+* Push notifications.  
+* Complex moderation workflows.  
 
 ---
-
-
