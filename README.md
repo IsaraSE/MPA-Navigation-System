@@ -1,6 +1,6 @@
-# 🌊 EcoMarineWay
+# 🌊 EcoMarineWay: low-impact maritime navigation alert system
 
-**EcoMarineWay** is a low-impact maritime navigation alert application for ships to navigate safely through marine protected areas (MPAs).
+> **EcoMarineWay** is a low-impact maritime navigation alert application for ships to navigate safely through marine protected areas (MPAs).
 
 **Status:** 🚧 Development in progress  
 **Timeline:** 🗓️ Sprint 0 + 4 development sprints (8 weeks)  
