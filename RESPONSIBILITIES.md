@@ -95,7 +95,7 @@
 * Unit tests (auth + mpa).
 * Leaflet renders MPA polygons with legend.  
 
-**User Management Features (Olivia)** 
+**User Management Features (Dinithi)** 
 * Auth pages (Signup/Login) with validation.
 * `/api/auth/signup`, `/api/auth/login` with JWT.  
 * `/api/users/me` (JWT).    
