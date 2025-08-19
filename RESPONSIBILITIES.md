@@ -1,18 +1,20 @@
 # EcoMarineWay: Team Roles & Sprint Responsibilities
 
-**Team Members:** Sasmitha, Isara, Dinithi, Olivia  
-**Project:** 5-Sprint Agile Development (Sprint 0 + 4 development sprints)  
-**Goal:** Build a Minimum Viable Product (MVP) for Marine Protected Area (MPA) navigation, reporting, and alerts.  
+👥 **Team Members:** Sasmitha, Isara, Dinithi, Olivia 
+ 
+🔁 **Project:** 5-Sprint Agile Development (Sprint 0 + 4 development sprints)  
+
+🎯 **Goal:** Build a Minimum Viable Product (MVP) for Marine Protected Area (MPA) navigation, reporting, and alerts.  
 
 ---
 
 ## 🧩 Overview: Team Roles & Responsibilities
 
 | Role                  | General Responsibilities |
-|-----------------------|---------------------------|
+|--------------------------|---------------------------|
 | **Product Owner (PO)** | Defines the project vision, manages and prioritizes the product backlog, makes sure features match stakeholder needs |
 | **Scrum Master (SM)** | Facilitates Scrum meetings (planning, daily standups, reviews, retrospectives), supports the team, removes obstacles, ensures Scrum rules are followed |
-| **Full-Stack Developer** | Builds and connects both frontend (React) and backend (Node.js + MongoDB), integrates APIs, tests features, and ensures the app works as expected |
+| **Full-Stack Dev** | Builds and connects both frontend (React) and backend (Node.js + MongoDB), integrates APIs, tests features, and ensures the app works as expected |
 
 ---
 
