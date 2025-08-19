@@ -161,7 +161,7 @@ A feature is considered "Done" when:
 ## 🤝 Stakeholder Engagement
 - Regular demos after each sprint  
 - Feedback incorporated into backlog  
-- Maintain open communication through ClickUp & Slack  
+- Maintain open communication through ClickUp & WhatsApp  
 
 ---
 
