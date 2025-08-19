@@ -27,50 +27,50 @@
 
 ## 🗓️ Sprint 0 – Setup & Planning
 
-**Sprint Goal:** Prepare the development environment, agree on the vision, and set up the initial backlog.  
+**Sprint Goal:** Establish development environment, project setup, and initial backlog.  
 
 | Member   | Role                   | Responsible Tasks |
 |----------|------------------------|-------------------|
-| Sasmitha | Scrum Master (SM)      | - Organize planning meeting<br>- Define sprint schedule and Scrum events<br>- Make sure team understands Agile roles |
-| Dinithi  | Product Owner (PO)     | - Write project vision statement<br>- Draft initial product backlog<br>- Prioritize features for Sprint 1 |
-| Isara    | Full-Stack Developer   | - Set up MERN project structure<br>- Configure MongoDB Atlas<br>- Connect backend with frontend starter code |
-| Olivia   | Full-Stack Developer   | - Deploy skeleton app online (Heroku/Render)<br>- Set up CI/CD pipeline<br>- Create simple wireframes for core screens |
+| Sasmitha | Scrum Master (SM)      | - Organize planning meeting<br>- Set up ClickUp workspace, backlog, and Scrum board<br>- Define sprint events and team alignment |
+| Dinithi  | Product Owner (PO)     | - Define project vision<br>- Create initial backlog in ClickUp<br>- Prioritize features for Sprint 1 |
+| Isara    | Full-Stack Developer   | - Create GitHub repo & branch strategy<br>- Set up MERN skeleton (React + Express + MongoDB Atlas) |
+| Olivia   | Full-Stack Developer   | - Configure CI/CD and deploy skeleton (Netlify/Render)<br>- Design wireframes for core screens (map, report form, login) |
 
 **Deliverables:**
-- Deployed MERN project skeleton  
-- Wireframes for login, map, and reporting forms  
+- Working MERN skeleton deployed online  
+- Wireframes for core features  
 - Initial prioritized product backlog in ClickUp  
 
 ---
 
 ## 🗓️ Sprint 1 – Core Setup & Map
 
-**Sprint Goal:** Allow user login and show a map with Marine Protected Areas (MPAs).  
+**Sprint Goal:** Enable user access and provide a basic map with MPAs.  
 
 | Member   | Role                   | Responsible Tasks |
 |----------|------------------------|-------------------|
-| Isara    | Scrum Master (SM)      | - Run daily standups<br>- Track progress on ClickUp<br>- Remove blockers |
-| Olivia   | Product Owner (PO)     | - Refine backlog for authentication and map features<br>- Prioritize user stories<br>- Check stakeholder expectations |
-| Sasmitha | Full-Stack Developer   | - Build map UI<br>- Show static polygons for MPAs<br>- Create basic navigation layout |
-| Dinithi  | Full-Stack Developer   | - Implement user authentication (JWT)<br>- Create user roles<br>- Connect backend login with frontend |
+| Isara    | Scrum Master (SM)      | - Facilitate daily standups<br>- Track progress on ClickUp<br>- Remove blockers |
+| Olivia   | Product Owner (PO)     | - Refine backlog for authentication and map<br>- Prioritize sprint tasks<br>- Confirm acceptance criteria |
+| Sasmitha | Full-Stack Developer   | - Build interactive map with static MPA polygons<br>- Create basic UI layout and navigation |
+| Dinithi  | Full-Stack Developer   | - Implement signup/login (JWT)<br>- Add roles (user/admin)<br>- Write initial test cases for authentication |
 
 **Deliverables:**
-- Login, logout, and register features working  
-- Map displays protected zones  
-- Deployed increment showing login + map  
+- Users can register/login/logout  
+- Map with visible protected zones  
+- Deployed increment demonstrating login + map  
 
 ---
 
 ## 🗓️ Sprint 2 – Reporting Features
 
-**Sprint Goal:** Let users report hotspots and pollution incidents, and view them on the map.  
+**Sprint Goal:** Allow users to report and view hotspots and pollution incidents.  
 
 | Member   | Role                   | Responsible Tasks |
 |----------|------------------------|-------------------|
-| Olivia   | Scrum Master (SM)      | - Lead Scrum ceremonies<br>- Monitor sprint tasks<br>- Help resolve blockers |
-| Sasmitha | Product Owner (PO)     | - Prioritize reporting features<br>- Update backlog based on feedback<br>- Approve acceptance criteria |
-| Isara    | Full-Stack Developer   | - Create hotspot reporting form<br>- Show hotspot markers on map<br>- Test form submissions |
-| Dinithi  | Full-Stack Developer   | - Create pollution report form<br>- Build list view of reports<br>- Implement backend APIs for reports |
+| Olivia   | Scrum Master (SM)      | - Lead Scrum ceremonies<br>- Monitor sprint tasks<br>- Support developers in removing blockers |
+| Sasmitha | Product Owner (PO)     | - Prioritize reporting features<br>- Update backlog with stakeholder feedback<br>- Approve acceptance criteria |
+| Isara    | Full-Stack Developer   | - Build hotspot reporting form (location + species + notes)<br>- Display hotspot markers on map |
+| Dinithi  | Full-Stack Developer   | - Implement pollution report form (location + description)<br>- Create list view of reports<br>- Add backend APIs for reports |
 
 **Deliverables:**
 - Hotspot reports visible on map  
@@ -81,38 +81,38 @@
 
 ## 🗓️ Sprint 3 – Alerts & Filtering
 
-**Sprint Goal:** Add alert notifications and improve usability with filtering.  
+**Sprint Goal:** Improve usability with alerts and filtering.  
 
 | Member   | Role                   | Responsible Tasks |
 |----------|------------------------|-------------------|
-| Sasmitha | Scrum Master (SM)      | - Facilitate daily Scrum<br>- Track burndown<br>- Support developers |
-| Dinithi  | Product Owner (PO)     | - Refine backlog for alerts/filtering<br>- Clarify requirements for proximity alerts<br>- Approve filtering design |
-| Isara    | Full-Stack Developer   | - Add vessel simulation marker<br>- Make report markers clickable<br>- Show detailed info when clicked |
-| Olivia   | Full-Stack Developer   | - Add proximity alerts when vessel enters MPA<br>- Add filter options for reports<br>- Test alert system |
+| Sasmitha | Scrum Master (SM)      | - Facilitate daily Scrum<br>- Track burndown chart<br>- Ensure sprint progress |
+| Dinithi  | Product Owner (PO)     | - Refine backlog for alerts and filtering<br>- Clarify requirements for proximity alerts<br>- Approve filtering features |
+| Isara    | Full-Stack Developer   | - Implement simulated vessel path with moving marker<br>- Improve report details (click marker to view info) |
+| Olivia   | Full-Stack Developer   | - Add proximity alerts when vessel nears hotspots/MPAs<br>- Add map filtering (toggle hotspots/pollution)<br>- Test alert functionality |
 
 **Deliverables:**
-- Moving vessel marker  
-- Alerts for entering MPAs  
-- Working filters on map  
-- Clickable report markers with details  
+- Vessel marker moves along a path  
+- Alerts shown when entering protected zones/hotspots  
+- Filter buttons working on map  
+- Usable clickable markers  
 
 ---
 
 ## 🗓️ Sprint 4 – Polishing & Finalization
 
-**Sprint Goal:** Refine the system, add user profiles, and prepare the final demo.  
+**Sprint Goal:** Refine the system, add profile view, and prepare for presentation.  
 
 | Member   | Role                   | Responsible Tasks |
 |----------|------------------------|-------------------|
-| Isara    | Scrum Master (SM)      | - Facilitate sprint review and retrospective<br>- Track final sprint tasks<br>- Ensure readiness for demo |
-| Olivia   | Product Owner (PO)     | - Approve final backlog<br>- Coordinate demo presentation<br>- Gather final feedback |
-| Sasmitha | Full-Stack Developer   | - Build user profile page<br>- Fix UI bugs<br>- Refine frontend design |
-| Dinithi  | Full-Stack Developer   | - Optimize backend for performance<br>- Ensure final deployment<br>- Fix remaining bugs |
+| Isara    | Scrum Master (SM)      | - Facilitate sprint review & retrospective<br>- Track final sprint tasks<br>- Prepare team for final demo |
+| Olivia   | Product Owner (PO)     | - Approve final backlog<br>- Coordinate presentation prep<br>- Collect final feedback |
+| Sasmitha | Full-Stack Developer   | - Add basic user profile page (list of user’s submitted reports)<br>- Fix bugs<br>- Improve UI styling |
+| Dinithi  | Full-Stack Developer   | - Optimize backend for performance<br>- Write documentation for features<br>- Ensure final deployment<br>- Prepare burndown charts & logs |
 
 **Deliverables:**
-- Final working system (map + reports + alerts + filters)  
-- User profile page completed  
-- Polished, bug-free demo ready  
+- Final integrated system (map + reports + alerts + filters)  
+- User profile page functional  
+- Polished UI and bug-free demo  
 - Final report, presentation slides, and Scrum evidence  
 
 ---
