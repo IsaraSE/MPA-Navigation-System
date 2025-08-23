@@ -17,6 +17,7 @@ backendend/node_modules/
 /build
 
 # misc
+example.env
 .env
 .DS_Store
 .env.local
