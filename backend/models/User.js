@@ -29,13 +29,15 @@ const userSchema = new mongoose.Schema(
 
         vesselName : {
             type: String,
+            required: true,
             
         },
 
         vesselType : {
             type : String,
             enum : ["cargo", "fishing", "pleasure", "tanker", "passenger", "other"],
-            default : "other"
+            default : "other",
+            required : true,
         },
 
         isActive : {
