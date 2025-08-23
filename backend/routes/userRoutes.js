@@ -18,16 +18,17 @@ const userValidationRules = [
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters"),
   body("role").optional().isIn(["sailor", "captain", "admin"]),
-  body("vesselName").optional().isString(),
-  body("vesselType").optional().isIn(["cargo", "tanker"]),
+  body("vesselName").notEmpty().withMessage("Vessel name is required"),
+  body("vesselType").notEmpty().withMessage("Vessel type is required").isIn(["cargo", "fishing", "pleasure", "tanker", "passenger", "other"]),
   body("isActive").optional().isBoolean(),
 ];
 
 // Routes
-router.get("/", auth, authorizeRoles("admin"), listUsers);
-router.get("/:id", auth, getUserById);
-router.post("/", auth, authorizeRoles("admin"), userValidationRules, createUser); 
-router.put("/:id", auth, authorizeRoles("admin"), userValidationRules, updateUser);
-router.delete("/:id", auth, authorizeRoles("admin"), deleteUser);
+router.get("/", auth, requireRoles("admin"), listUsers);
+router.get("/:id", auth, requireRoles("admin"), getUserById);
+router.post("/", auth, requireRoles("admin"), userValidationRules, createUser);
+router.post("/register", userValidationRules, registerController);
+router.put("/:id", auth, requireRoles("admin"), userValidationRules, updateUser);
+router.delete("/:id", auth, requireRoles("admin"), deleteUser);
 
 export default router;
