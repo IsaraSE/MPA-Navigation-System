@@ -2,22 +2,32 @@ import { Router } from "express";
 import {body} from "express-validator";
 import {  listUsers, getUserById, createUser, deleteUser, updateUser } from "../controllers/userController.js";
 import auth from "../middleware/auth.js";
-import requireRoles from "../middleware/roles.js";
+import {requireRoles} from "../middleware/roles.js";
 
 const router = Router();
 
 router.use(auth);
 
-router.get("/", requireRoles("admin"), listUsers);
-router.get("/:id", requireRoles("admin", "captain"), getUserById);
-router.put("/:id", requireRoles("admin", "captain"), [
-    body("role").optional().isIn(["admin", "captain", "sailor"]),
-    body("vesselType").optional().isIn(["cargo", "fishing", "pleasure", "tanker", "passenger", "other"])
-],
-        update
-    );
+//rules for the validations 
+// Validation rules for create/update
+const userValidationRules = [
+  body("name").notEmpty().withMessage("Name is required"),
+  body("email").isEmail().withMessage("Valid email is required"),
+  body("password")
+    .optional({ checkFalsy: true }) // optional for updates
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+  body("role").optional().isIn(["sailor", "captain", "admin"]),
+  body("vesselName").optional().isString(),
+  body("vesselType").optional().isIn(["cargo", "tanker"]),
+  body("isActive").optional().isBoolean(),
+];
 
-    router.delete("/:id", requireRoles("admin"), deleteUser);
+// Routes
+router.get("/", auth, authorizeRoles("admin"), listUsers);
+router.get("/:id", auth, getUserById);
+router.post("/", auth, authorizeRoles("admin"), userValidationRules, createUser); 
+router.put("/:id", auth, authorizeRoles("admin"), userValidationRules, updateUser);
+router.delete("/:id", auth, authorizeRoles("admin"), deleteUser);
 
-
-    export default router;
+export default router;
