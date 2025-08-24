@@ -27,7 +27,6 @@ const userValidationRules = [
 router.get("/", auth, requireRoles("admin"), listUsers);
 router.get("/:id", auth, requireRoles("admin"), getUserById);
 router.post("/", auth, requireRoles("admin"), userValidationRules, createUser);
-router.post("/register", userValidationRules, registerController);
 router.put("/:id", auth, requireRoles("admin"), userValidationRules, updateUser);
 router.delete("/:id", auth, requireRoles("admin"), deleteUser);
 
