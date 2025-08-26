@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin } from 'lucide-react';
 
 const ShipMapWithZones = () => {
   const mapRef = useRef(null);
@@ -13,10 +13,15 @@ const ShipMapWithZones = () => {
   const [sensitiveZones, setSensitiveZones] = useState([]);
   const [zonesVisible, setZonesVisible] = useState(true);
   const [loadingZones, setLoadingZones] = useState(false);
+  const [showVesselList, setShowVesselList] = useState(false);
+  const [showZoneInfo, setShowZoneInfo] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [currentZoom, setCurrentZoom] = useState(2);
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const zonesLayerRef = useRef(null);
+  const zoneIconsLayerRef = useRef(null);
 
   // Enhanced error handling for Leaflet loading
   useEffect(() => {
@@ -91,79 +96,15 @@ const ShipMapWithZones = () => {
     };
   }, []);
 
-  // Fetch Marine Protected Areas from ProtectedPlanet API
-  const fetchMarineProtectedAreas = async () => {
-    try {
-      setLoadingZones(true);
-      
-      // Using ProtectedPlanet API (World Database on Protected Areas)
-      // This is a simplified approach - in production you'd want to fetch based on map bounds
-      const response = await fetch(
-        'https://api.protectedplanet.net/v3/protected_areas?filter[designation]=National%20Marine%20Sanctuary,Marine%20Protected%20Area,Marine%20Reserve&per_page=50',
-        {
-          headers: {
-            'Accept': 'application/vnd.api+json'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch protected areas');
-      }
-
-      const data = await response.json();
-      return data.data || [];
-    } catch (error) {
-      console.warn('ProtectedPlanet API error, using fallback data:', error);
-      return getFallbackSensitiveZones();
-    } finally {
-      setLoadingZones(false);
-    }
-  };
-
-  // Fetch from OpenStreetMap Overpass API for marine protected areas
-  const fetchOSMMarineAreas = async () => {
-    try {
-      const overpassQuery = `
-        [out:json][timeout:25];
-        (
-          relation[boundary=protected_area][protect_class~"^(1|2|3|4|5|6)$"][marine=yes];
-          relation[boundary=national_park][marine=yes];
-          relation[leisure=nature_reserve][marine=yes];
-        );
-        out geom;
-      `;
-
-      const response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'data=' + encodeURIComponent(overpassQuery)
-      });
-
-      if (!response.ok) {
-        throw new Error('OSM Overpass API error');
-      }
-
-      const data = await response.json();
-      return data.elements || [];
-    } catch (error) {
-      console.warn('OSM API error:', error);
-      return [];
-    }
-  };
-
-  // Fallback sensitive zones data (real-world locations)
+  // Fallback sensitive zones data (corrected coordinates)
   const getFallbackSensitiveZones = () => {
     return [
       {
         id: 'great_barrier_reef',
         name: 'Great Barrier Reef Marine Park',
         type: 'marine_protected_area',
-        coordinates: [
-          [-10.5, 142.0], [-10.5, 145.8], [-24.5, 145.8], [-24.5, 142.0], [-10.5, 142.0]
-        ],
+        center: [-16.0, 145.8], // Corrected to be in water near Queensland coast
+        radius: 200000, // 200km radius in meters
         description: 'World Heritage marine protected area',
         restrictions: 'No anchoring, speed restrictions, waste discharge prohibited',
         authority: 'Great Barrier Reef Marine Park Authority',
@@ -173,9 +114,8 @@ const ShipMapWithZones = () => {
         id: 'monterey_bay',
         name: 'Monterey Bay National Marine Sanctuary',
         type: 'national_marine_sanctuary',
-        coordinates: [
-          [35.5, -121.0], [35.5, -122.5], [37.0, -122.5], [37.0, -121.0], [35.5, -121.0]
-        ],
+        center: [36.25, -121.75],
+        radius: 75000, // 75km radius
         description: 'Critical habitat for marine mammals and seabirds',
         restrictions: 'Speed restrictions for whale protection, no dumping',
         authority: 'NOAA',
@@ -185,9 +125,8 @@ const ShipMapWithZones = () => {
         id: 'wadden_sea',
         name: 'Wadden Sea World Heritage Site',
         type: 'world_heritage_site',
-        coordinates: [
-          [53.3, 6.0], [53.3, 8.5], [55.0, 8.5], [55.0, 6.0], [53.3, 6.0]
-        ],
+        center: [54.15, 7.25],
+        radius: 120000, // 120km radius
         description: 'Tidal flat ecosystem, critical for migratory birds',
         restrictions: 'Seasonal navigation restrictions, draft limitations',
         authority: 'Trilateral Wadden Sea Cooperation',
@@ -197,9 +136,8 @@ const ShipMapWithZones = () => {
         id: 'galapagos_marine_reserve',
         name: 'Galápagos Marine Reserve',
         type: 'marine_reserve',
-        coordinates: [
-          [1.5, -92.0], [1.5, -89.0], [-1.5, -89.0], [-1.5, -92.0], [1.5, -92.0]
-        ],
+        center: [-0.5, -90.0], // Adjusted to be more in water
+        radius: 150000, // 150km radius
         description: 'Unique ecosystem with endemic species',
         restrictions: 'Restricted access, authorized vessels only',
         authority: 'Galápagos National Park Service',
@@ -209,9 +147,8 @@ const ShipMapWithZones = () => {
         id: 'antarctic_specially_protected',
         name: 'Antarctic Specially Protected Area',
         type: 'specially_protected_area',
-        coordinates: [
-          [-60.0, -65.0], [-60.0, -55.0], [-65.0, -55.0], [-65.0, -65.0], [-60.0, -65.0]
-        ],
+        center: [-62.5, -60.0],
+        radius: 180000, // 180km radius
         description: 'Pristine Antarctic marine environment',
         restrictions: 'Permit required, environmental impact assessment',
         authority: 'Antarctic Treaty System',
@@ -221,9 +158,8 @@ const ShipMapWithZones = () => {
         id: 'north_sea_natura2000',
         name: 'North Sea Natura 2000 Sites',
         type: 'natura2000',
-        coordinates: [
-          [54.0, 3.0], [54.0, 7.0], [56.0, 7.0], [56.0, 3.0], [54.0, 3.0]
-        ],
+        center: [55.0, 5.0],
+        radius: 100000, // 100km radius
         description: 'European network of protected marine areas',
         restrictions: 'Seasonal fishing restrictions, seabird protection',
         authority: 'European Union',
@@ -233,9 +169,8 @@ const ShipMapWithZones = () => {
         id: 'coral_triangle',
         name: 'Coral Triangle Marine Protected Area',
         type: 'marine_biodiversity_hotspot',
-        coordinates: [
-          [-5.0, 110.0], [-5.0, 135.0], [5.0, 135.0], [5.0, 110.0], [-5.0, 110.0]
-        ],
+        center: [0.0, 122.5],
+        radius: 250000, // 250km radius
         description: 'Global center of marine biodiversity',
         restrictions: 'Coral protection measures, anchor restrictions',
         authority: 'Coral Triangle Initiative',
@@ -245,12 +180,33 @@ const ShipMapWithZones = () => {
         id: 'mediterranean_spami',
         name: 'Mediterranean SPAMI Network',
         type: 'specially_protected_area',
-        coordinates: [
-          [36.0, 0.0], [36.0, 15.0], [42.0, 15.0], [42.0, 0.0], [36.0, 0.0]
-        ],
+        center: [39.0, 7.5],
+        radius: 80000, // 80km radius
         description: 'Specially Protected Areas of Mediterranean Importance',
         restrictions: 'Habitat protection, fishing regulations',
         authority: 'UNEP-MAP',
+        severity: 'medium'
+      },
+      {
+        id: 'bering_sea_protected',
+        name: 'Bering Sea Marine Protected Area',
+        type: 'marine_protected_area',
+        center: [60.0, -175.0],
+        radius: 90000, // 90km radius
+        description: 'Critical Arctic marine ecosystem',
+        restrictions: 'Ice navigation protocols, wildlife protection',
+        authority: 'NOAA Fisheries',
+        severity: 'high'
+      },
+      {
+        id: 'gulf_stream_sanctuary',
+        name: 'Gulf Stream Marine Sanctuary',
+        type: 'marine_sanctuary',
+        center: [35.0, -75.0],
+        radius: 60000, // 60km radius
+        description: 'Important oceanic current system',
+        restrictions: 'Current-sensitive navigation, protected species zones',
+        authority: 'US Marine Sanctuary Program',
         severity: 'medium'
       }
     ];
@@ -289,6 +245,13 @@ const ShipMapWithZones = () => {
         console.warn('Label overlay failed:', labelError);
       }
 
+      // Add zoom change listener
+      mapInstance.current.on('zoomend', () => {
+        const zoom = mapInstance.current.getZoom();
+        setCurrentZoom(zoom);
+        updateZoneDisplay(zoom);
+      });
+
       setMapInitialized(true);
       initializeVessels();
       loadSensitiveZones();
@@ -304,22 +267,8 @@ const ShipMapWithZones = () => {
     try {
       setLoadingZones(true);
       
-      // Try to fetch from APIs, fallback to local data
-      let zones = [];
-      
-      try {
-        // Uncomment to use real APIs (may require API keys or have CORS issues)
-        // const protectedAreas = await fetchMarineProtectedAreas();
-        // const osmAreas = await fetchOSMMarineAreas();
-        // zones = [...protectedAreas, ...osmAreas];
-        
-        // For now, using fallback data with real-world coordinates
-        zones = getFallbackSensitiveZones();
-      } catch (apiError) {
-        console.warn('API fetch failed, using fallback:', apiError);
-        zones = getFallbackSensitiveZones();
-      }
-
+      // For now, using fallback data with corrected coordinates
+      const zones = getFallbackSensitiveZones();
       setSensitiveZones(zones);
       addSensitiveZonesToMap(zones);
       
@@ -331,79 +280,168 @@ const ShipMapWithZones = () => {
     }
   };
 
-  // Add sensitive zones to map
+  // Create zone icon based on severity
+  const createZoneIcon = (zone) => {
+    if (!window.L) return null;
+
+    try {
+      const severityConfig = {
+        critical: { color: '#dc3545', icon: '🚫', size: 32 },
+        high: { color: '#fd7e14', icon: '⚠️', size: 28 },
+        medium: { color: '#ffc107', icon: '⚡', size: 24 },
+        low: { color: '#28a745', icon: '🛡️', size: 20 }
+      };
+
+      const config = severityConfig[zone.severity] || severityConfig.medium;
+
+      return window.L.divIcon({
+        className: 'zone-icon-marker',
+        html: `
+          <div style="
+            background: white;
+            border: 3px solid ${config.color};
+            border-radius: 50%;
+            width: ${config.size}px;
+            height: ${config.size}px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: ${config.size * 0.4}px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            ${zone.severity === 'critical' ? 'animation: pulse-border 2s infinite;' : ''}
+          ">
+            ${config.icon}
+          </div>
+        `,
+        iconSize: [config.size, config.size],
+        iconAnchor: [config.size/2, config.size/2]
+      });
+    } catch (error) {
+      console.warn('Zone icon creation error:', error);
+      return null;
+    }
+  };
+
+  // Add sensitive zones to map with zoom-dependent display
   const addSensitiveZonesToMap = (zones) => {
     if (!mapInstance.current || !window.L) return;
 
     try {
       const L = window.L;
 
-      // Create layer group for zones
+      // Create layer groups for zones and icons
       if (zonesLayerRef.current) {
         mapInstance.current.removeLayer(zonesLayerRef.current);
       }
-      zonesLayerRef.current = L.layerGroup().addTo(mapInstance.current);
+      if (zoneIconsLayerRef.current) {
+        mapInstance.current.removeLayer(zoneIconsLayerRef.current);
+      }
+
+      zonesLayerRef.current = L.layerGroup();
+      zoneIconsLayerRef.current = L.layerGroup();
 
       zones.forEach(zone => {
         try {
           const severityConfig = {
-            critical: { color: '#dc3545', fillOpacity: 0.3, weight: 3 },
-            high: { color: '#fd7e14', fillOpacity: 0.25, weight: 2 },
-            medium: { color: '#ffc107', fillOpacity: 0.2, weight: 2 },
-            low: { color: '#28a745', fillOpacity: 0.15, weight: 1 }
+            critical: { color: '#dc3545', fillOpacity: 0.25, weight: 4 },
+            high: { color: '#fd7e14', fillOpacity: 0.2, weight: 3 },
+            medium: { color: '#ffc107', fillOpacity: 0.15, weight: 2 },
+            low: { color: '#28a745', fillOpacity: 0.1, weight: 2 }
           };
 
           const config = severityConfig[zone.severity] || severityConfig.medium;
 
-          // Create polygon
-          const polygon = L.polygon(zone.coordinates, {
-            ...config,
-            dashArray: zone.severity === 'critical' ? '10,10' : null
-          });
-
-          // Add popup with zone information
+          // Create popup content
           const popupContent = `
-            <div style="font-family: 'Arial', sans-serif; min-width: 250px; max-width: 300px;">
-              <h3 style="margin: 0 0 10px 0; color: #2c3e50; display: flex; align-items: center;">
-                <span style="color: ${config.color}; margin-right: 8px;">
+            <div style="font-family: 'Arial', sans-serif; min-width: 280px; max-width: 320px;">
+              <h3 style="margin: 0 0 12px 0; color: #2c3e50; display: flex; align-items: center; font-size: 1.1em;">
+                <span style="color: ${config.color}; margin-right: 8px; font-size: 1.2em;">
                   ${zone.severity === 'critical' ? '🚫' : zone.severity === 'high' ? '⚠️' : zone.severity === 'medium' ? '⚡' : '🛡️'}
                 </span>
                 ${zone.name}
               </h3>
-              <p><strong>Type:</strong> ${zone.type.replace(/_/g, ' ').toUpperCase()}</p>
-              <p><strong>Description:</strong> ${zone.description}</p>
-              <p><strong>Authority:</strong> ${zone.authority}</p>
-              <div style="background: #f8f9fa; padding: 8px; border-left: 4px solid ${config.color}; margin: 10px 0;">
-                <strong>Restrictions:</strong><br>
-                ${zone.restrictions}
+              <div style="margin-bottom: 10px;">
+                <strong style="color: #495057;">Type:</strong> 
+                <span style="color: #6c757d;">${zone.type.replace(/_/g, ' ').toUpperCase()}</span>
               </div>
-              <p style="color: ${config.color}; font-weight: bold; margin: 5px 0;">
-                Severity: ${zone.severity.toUpperCase()}
+              <div style="margin-bottom: 10px;">
+                <strong style="color: #495057;">Coverage:</strong> 
+                <span style="color: #6c757d;">${(zone.radius / 1000).toFixed(0)} km radius</span>
+              </div>
+              <p style="margin: 8px 0; color: #495057; line-height: 1.4;">
+                <strong>Description:</strong><br>
+                ${zone.description}
               </p>
+              <p style="margin: 8px 0; color: #495057;">
+                <strong>Authority:</strong> ${zone.authority}
+              </p>
+              <div style="background: #f8f9fa; padding: 10px; border-left: 4px solid ${config.color}; margin: 12px 0; border-radius: 0 4px 4px 0;">
+                <strong style="color: #495057;">Navigation Restrictions:</strong><br>
+                <span style="color: #6c757d; font-size: 0.95em; line-height: 1.3;">
+                  ${zone.restrictions}
+                </span>
+              </div>
+              <div style="text-align: center; margin-top: 10px;">
+                <span style="
+                  color: ${config.color}; 
+                  font-weight: bold; 
+                  background: ${config.color}15;
+                  padding: 4px 12px;
+                  border-radius: 20px;
+                  border: 2px solid ${config.color};
+                  font-size: 0.9em;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
+                ">
+                  ${zone.severity} Risk Zone
+                </span>
+              </div>
             </div>
           `;
 
-          polygon.bindPopup(popupContent);
+          // Create circle for detailed view (high zoom)
+          const circle = L.circle(zone.center, {
+            radius: zone.radius,
+            ...config,
+            dashArray: zone.severity === 'critical' ? '15,10' : zone.severity === 'high' ? '10,5' : null
+          });
+          circle.bindPopup(popupContent);
 
-          // Add to layer group
-          polygon.addTo(zonesLayerRef.current);
+          // Add zone center marker for detailed view
+          const centerMarker = L.circleMarker(zone.center, {
+            radius: zone.severity === 'critical' ? 12 : zone.severity === 'high' ? 10 : 8,
+            fillColor: config.color,
+            color: '#fff',
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.9
+          });
+          centerMarker.bindPopup(popupContent);
 
-          // Add zone center marker for better visibility
-          if (zone.coordinates && zone.coordinates.length > 2) {
-            const bounds = L.polygon(zone.coordinates).getBounds();
-            const center = bounds.getCenter();
+          // Add to zones layer (for detailed view)
+          circle.addTo(zonesLayerRef.current);
+          centerMarker.addTo(zonesLayerRef.current);
 
-            const zoneMarker = L.circleMarker(center, {
-              radius: 8,
+          // Add pulsing effect for critical zones
+          if (zone.severity === 'critical') {
+            const pulseMarker = L.circleMarker(zone.center, {
+              radius: 15,
               fillColor: config.color,
-              color: '#fff',
+              color: config.color,
               weight: 2,
-              opacity: 1,
-              fillOpacity: 0.8
+              opacity: 0.6,
+              fillOpacity: 0.2,
+              className: 'pulse-marker'
             });
+            pulseMarker.addTo(zonesLayerRef.current);
+          }
 
-            zoneMarker.bindPopup(popupContent);
-            zoneMarker.addTo(zonesLayerRef.current);
+          // Create icon marker for overview (low zoom)
+          const zoneIcon = createZoneIcon(zone);
+          if (zoneIcon) {
+            const iconMarker = L.marker(zone.center, { icon: zoneIcon });
+            iconMarker.bindPopup(popupContent);
+            iconMarker.addTo(zoneIconsLayerRef.current);
           }
 
         } catch (zoneError) {
@@ -411,19 +449,79 @@ const ShipMapWithZones = () => {
         }
       });
 
+      // Add CSS for pulsing animation if not already added
+      if (!document.querySelector('#zone-animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'zone-animation-styles';
+        style.textContent = `
+          @keyframes leaflet-pulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 0.3; }
+            100% { transform: scale(1.6); opacity: 0; }
+          }
+          .pulse-marker {
+            animation: leaflet-pulse 2s infinite;
+          }
+          @keyframes pulse-border {
+            0% { border-width: 3px; }
+            50% { border-width: 6px; }
+            100% { border-width: 3px; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // Initially show the appropriate layer based on current zoom
+      updateZoneDisplay(mapInstance.current.getZoom());
+
     } catch (error) {
       console.error('Error adding zones to map:', error);
     }
   };
 
+  // Update zone display based on zoom level
+  const updateZoneDisplay = (zoom) => {
+    if (!mapInstance.current || !zonesLayerRef.current || !zoneIconsLayerRef.current || !zonesVisible) return;
+
+    try {
+      // Show circles when zoomed in (zoom level 5 and above), icons when zoomed out
+      if (zoom >= 5) {
+        // Detailed view - show circles and center markers
+        if (!mapInstance.current.hasLayer(zonesLayerRef.current)) {
+          zonesLayerRef.current.addTo(mapInstance.current);
+        }
+        if (mapInstance.current.hasLayer(zoneIconsLayerRef.current)) {
+          mapInstance.current.removeLayer(zoneIconsLayerRef.current);
+        }
+      } else {
+        // Overview - show icons only
+        if (mapInstance.current.hasLayer(zonesLayerRef.current)) {
+          mapInstance.current.removeLayer(zonesLayerRef.current);
+        }
+        if (!mapInstance.current.hasLayer(zoneIconsLayerRef.current)) {
+          zoneIconsLayerRef.current.addTo(mapInstance.current);
+        }
+      }
+    } catch (error) {
+      console.warn('Error updating zone display:', error);
+    }
+  };
+
   // Toggle zones visibility
   const toggleZonesVisibility = () => {
-    if (!mapInstance.current || !zonesLayerRef.current) return;
+    if (!mapInstance.current || !zonesLayerRef.current || !zoneIconsLayerRef.current) return;
 
     if (zonesVisible) {
-      mapInstance.current.removeLayer(zonesLayerRef.current);
+      // Hide both layers
+      if (mapInstance.current.hasLayer(zonesLayerRef.current)) {
+        mapInstance.current.removeLayer(zonesLayerRef.current);
+      }
+      if (mapInstance.current.hasLayer(zoneIconsLayerRef.current)) {
+        mapInstance.current.removeLayer(zoneIconsLayerRef.current);
+      }
     } else {
-      zonesLayerRef.current.addTo(mapInstance.current);
+      // Show appropriate layer based on current zoom
+      updateZoneDisplay(currentZoom);
     }
     setZonesVisible(!zonesVisible);
   };
@@ -809,101 +907,137 @@ const ShipMapWithZones = () => {
         }}>
           <div style={{ textAlign: 'center' }}>
             <Waves size={32} style={{ marginBottom: '1rem', animation: 'pulse 2s infinite' }} />
-            <div>Loading Maritime Map with Environmental Zones...</div>
+            <div>Loading Maritime Map with Smart Zone Display...</div>
           </div>
         </div>
       )}
 
-      {/* Fleet Control Panel - Top Left */}
+      {/* Collapsible Control Panel - Top Left */}
       <div style={{
         position: 'absolute',
         top: '1rem',
         left: '1rem',
         zIndex: 1000,
-        background: 'rgba(255,255,255,0.95)',
-        padding: '1rem',
-        borderRadius: '8px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        minWidth: '220px'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem'
       }}>
-        <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
-          <Navigation size={18} style={{ marginRight: '0.5rem' }} />
-          Fleet Control
-        </h4>
-        
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button
-            onClick={() => setIsSimulating(!isSimulating)}
-            disabled={!mapInitialized}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: isSimulating ? '#dc3545' : '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: mapInitialized ? 'pointer' : 'not-allowed',
-              fontSize: '0.875rem'
-            }}
-          >
-            {isSimulating ? 'Pause' : 'Start'}
-          </button>
-          
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '0.875rem'
-            }}
-          >
-            Reset
-          </button>
-        </div>
+        {/* Toggle Controls Button */}
+        <button
+          onClick={() => setShowControls(!showControls)}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            color: '#333'
+          }}
+          title={showControls ? 'Hide Controls' : 'Show Controls'}
+        >
+          <Settings size={18} />
+        </button>
 
-        <div style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '1rem' }}>
-          <div>Vessels: {vessels.length}</div>
-          <div style={{ color: isSimulating ? '#28a745' : '#dc3545' }}>
-            {isSimulating ? 'Active' : 'Paused'}
+        {/* Main Controls Container */}
+        {showControls && (
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            padding: '1rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            minWidth: '220px'
+          }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+              <Navigation size={18} style={{ marginRight: '0.5rem' }} />
+              Fleet Control
+            </h4>
+            
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+              <button
+                onClick={() => setIsSimulating(!isSimulating)}
+                disabled={!mapInitialized}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: isSimulating ? '#dc3545' : '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: mapInitialized ? 'pointer' : 'not-allowed',
+                  fontSize: '0.875rem',
+                  flex: 1
+                }}
+              >
+                {isSimulating ? 'Pause' : 'Start'}
+              </button>
+              
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  flex: 1
+                }}
+              >
+                Reset
+              </button>
+            </div>
+
+            <div style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '1rem' }}>
+              <div>Vessels: {vessels.length}</div>
+              <div style={{ color: isSimulating ? '#28a745' : '#dc3545' }}>
+                {isSimulating ? 'Active' : 'Paused'}
+              </div>
+              <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                Zoom: {currentZoom} • {currentZoom >= 5 ? 'Detailed View' : 'Overview'}
+              </div>
+            </div>
+
+            {/* Environmental Zones Control */}
+            <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem' }}>
+              <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+                <Shield size={16} style={{ marginRight: '0.5rem' }} />
+                Smart Zone Display
+              </h5>
+              
+              <button
+                onClick={toggleZonesVisibility}
+                disabled={loadingZones}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: zonesVisible ? '#17a2b8' : '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: loadingZones ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  justifyContent: 'center'
+                }}
+              >
+                {zonesVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                {loadingZones ? 'Loading...' : (zonesVisible ? 'Hide Zones' : 'Show Zones')}
+              </button>
+
+              <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
+                {sensitiveZones.length} zones loaded<br/>
+                {currentZoom >= 5 ? 'Showing circles' : 'Showing icons'}
+              </div>
+            </div>
           </div>
-        </div>
-
-        {/* Environmental Zones Control */}
-        <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem' }}>
-          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
-            <Shield size={16} style={{ marginRight: '0.5rem' }} />
-            Environmental Zones
-          </h5>
-          
-          <button
-            onClick={toggleZonesVisibility}
-            disabled={loadingZones}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: zonesVisible ? '#17a2b8' : '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loadingZones ? 'not-allowed' : 'pointer',
-              fontSize: '0.875rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              width: '100%',
-              justifyContent: 'center'
-            }}
-          >
-            {zonesVisible ? <Eye size={16} /> : <EyeOff size={16} />}
-            {loadingZones ? 'Loading...' : (zonesVisible ? 'Hide Zones' : 'Show Zones')}
-          </button>
-
-          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
-            {sensitiveZones.length} zones loaded
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Environmental Zones Legend - Bottom Left */}
@@ -914,42 +1048,97 @@ const ShipMapWithZones = () => {
           left: '1rem',
           zIndex: 1000,
           background: 'rgba(255,255,255,0.95)',
-          padding: '1rem',
+          padding: '0.75rem',
           borderRadius: '8px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          maxWidth: '280px'
+          maxWidth: '240px'
         }}>
-          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
-            <Leaf size={16} style={{ marginRight: '0.5rem' }} />
-            Zone Severity Legend
+          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center', fontSize: '0.875rem' }}>
+            <Leaf size={14} style={{ marginRight: '0.5rem' }} />
+            {currentZoom >= 5 ? 'Zone Risk Levels' : 'Zone Icons'}
           </h5>
           
-          <div style={{ fontSize: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#dc3545', marginRight: '0.5rem', borderRadius: '2px' }}></div>
-              <span>Critical - Restricted Access</span>
+          <div style={{ fontSize: '0.7rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.3rem' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#dc3545', 
+                marginRight: '0.5rem', 
+                borderRadius: currentZoom >= 5 ? '50%' : '2px',
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '8px'
+              }}>
+                {currentZoom < 5 ? '🚫' : ''}
+              </div>
+              <span>Critical {currentZoom >= 5 ? '(Pulsing)' : '(Red Icons)'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#fd7e14', marginRight: '0.5rem', borderRadius: '2px' }}></div>
-              <span>High - Special Precautions</span>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.3rem' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#fd7e14', 
+                marginRight: '0.5rem', 
+                borderRadius: currentZoom >= 5 ? '50%' : '2px',
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '8px'
+              }}>
+                {currentZoom < 5 ? '⚠️' : ''}
+              </div>
+              <span>High {currentZoom >= 5 ? '(Dashed)' : '(Orange Icons)'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#ffc107', marginRight: '0.5rem', borderRadius: '2px' }}></div>
-              <span>Medium - Regulated Activity</span>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.3rem' }}>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#ffc107', 
+                marginRight: '0.5rem', 
+                borderRadius: currentZoom >= 5 ? '50%' : '2px',
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '8px'
+              }}>
+                {currentZoom < 5 ? '⚡' : ''}
+              </div>
+              <span>Medium {currentZoom >= 5 ? '(Solid)' : '(Yellow Icons)'}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '12px', height: '12px', backgroundColor: '#28a745', marginRight: '0.5rem', borderRadius: '2px' }}></div>
-              <span>Low - Protected Area</span>
+              <div style={{ 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: '#28a745', 
+                marginRight: '0.5rem', 
+                borderRadius: currentZoom >= 5 ? '50%' : '2px',
+                border: '2px solid white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '8px'
+              }}>
+                {currentZoom < 5 ? '🛡️' : ''}
+              </div>
+              <span>Low {currentZoom >= 5 ? '(Thin)' : '(Green Icons)'}</span>
             </div>
+          </div>
+          <div style={{ fontSize: '0.65rem', color: '#6c757d', marginTop: '0.5rem', fontStyle: 'italic' }}>
+            {currentZoom >= 5 ? 'Click circles for info' : 'Click icons for details'}
           </div>
         </div>
       )}
 
-      {/* Map Zoom Controls - Top Right */}
+      {/* Map Zoom Controls - Bottom Right */}
       <div style={{
         position: 'absolute',
-        top: '1rem',
-        right: vessels.length > 0 ? '270px' : '1rem',
+        bottom: '1rem',
+        right: '1rem',
         zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
@@ -1039,115 +1228,171 @@ const ShipMapWithZones = () => {
         </button>
       </div>
 
-      {/* Vessel List - Far Right */}
-      {vessels.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: '1rem',
-          right: '1rem',
-          zIndex: 1000,
-          background: 'rgba(255,255,255,0.95)',
-          padding: '1rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          width: '250px',
-          maxHeight: '300px',
-          overflowY: 'auto'
-        }}>
-          <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50' }}>Active Vessels</h4>
-          
-          {vessels.map(vessel => (
-            <div
-              key={vessel.mmsi}
-              style={{
-                padding: '0.5rem',
-                marginBottom: '0.5rem',
-                backgroundColor: selectedVessel?.mmsi === vessel.mmsi ? '#e3f2fd' : '#f8f9fa',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-                border: '1px solid #e9ecef'
-              }}
-              onClick={() => {
-                setSelectedVessel(vessel);
-                if (mapInstance.current && markersRef.current[vessel.mmsi]) {
-                  mapInstance.current.setView([vessel.lat, vessel.lon], 6);
-                  markersRef.current[vessel.mmsi].marker.openPopup();
-                }
-              }}
-            >
-              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                {vessel.name}
-              </div>
-              <div style={{ color: '#6c757d' }}>
-                {vessel.speed.toFixed(1)} kn • {vessel.type}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Vessel List Toggle Button - Top Right */}
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        right: '1rem',
+        zIndex: 1000
+      }}>
+        <button
+          onClick={() => setShowVesselList(!showVesselList)}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            color: '#333',
+            fontSize: '0.875rem'
+          }}
+        >
+          <Navigation size={16} />
+          Vessels ({vessels.length})
+          {showVesselList ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
 
-      {/* Environmental Zones Info Panel - Right Side */}
-      {zonesVisible && sensitiveZones.length > 0 && (
-        <div style={{
-          position: 'absolute',
-          top: vessels.length > 0 ? '320px' : '1rem',
-          right: '1rem',
-          zIndex: 1000,
-          background: 'rgba(255,255,255,0.95)',
-          padding: '1rem',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          width: '250px',
-          maxHeight: '250px',
-          overflowY: 'auto'
-        }}>
-          <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
-            <Fish size={18} style={{ marginRight: '0.5rem' }} />
-            Protected Areas
-          </h4>
-          
-          {sensitiveZones.slice(0, 4).map(zone => (
-            <div
-              key={zone.id}
-              style={{
-                padding: '0.5rem',
-                marginBottom: '0.5rem',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.75rem',
-                border: '1px solid #e9ecef',
-                borderLeft: `4px solid ${
-                  zone.severity === 'critical' ? '#dc3545' :
-                  zone.severity === 'high' ? '#fd7e14' :
-                  zone.severity === 'medium' ? '#ffc107' : '#28a745'
-                }`
-              }}
-              onClick={() => {
-                if (mapInstance.current && zone.coordinates && zone.coordinates.length > 2) {
-                  const L = window.L;
-                  const bounds = L.polygon(zone.coordinates).getBounds();
-                  mapInstance.current.fitBounds(bounds);
-                }
-              }}
-            >
-              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                {zone.name.length > 25 ? zone.name.substring(0, 25) + '...' : zone.name}
+        {/* Vessel List - Only shown when toggled */}
+        {showVesselList && vessels.length > 0 && (
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            padding: '1rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            width: '250px',
+            maxHeight: '300px',
+            overflowY: 'auto',
+            marginTop: '0.5rem'
+          }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1rem' }}>Active Vessels</h4>
+            
+            {vessels.map(vessel => (
+              <div
+                key={vessel.mmsi}
+                style={{
+                  padding: '0.5rem',
+                  marginBottom: '0.5rem',
+                  backgroundColor: selectedVessel?.mmsi === vessel.mmsi ? '#e3f2fd' : '#f8f9fa',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  border: '1px solid #e9ecef'
+                }}
+                onClick={() => {
+                  setSelectedVessel(vessel);
+                  if (mapInstance.current && markersRef.current[vessel.mmsi]) {
+                    mapInstance.current.setView([vessel.lat, vessel.lon], 6);
+                    markersRef.current[vessel.mmsi].marker.openPopup();
+                  }
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {vessel.name}
+                </div>
+                <div style={{ color: '#6c757d', fontSize: '0.75rem' }}>
+                  {vessel.speed.toFixed(1)} kn • {vessel.type}
+                </div>
               </div>
-              <div style={{ color: '#6c757d' }}>
-                {zone.type.replace(/_/g, ' ').toUpperCase()} • {zone.severity.toUpperCase()}
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Environmental Zones Info Toggle Button - Right Side */}
+      <div style={{
+        position: 'absolute',
+        top: showVesselList ? 'calc(1rem + 50px + 300px)' : 'calc(1rem + 50px)',
+        right: '1rem',
+        zIndex: 1000
+      }}>
+        <button
+          onClick={() => setShowZoneInfo(!showZoneInfo)}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            color: '#333',
+            fontSize: '0.875rem'
+          }}
+        >
+          <MapPin size={16} />
+          Protected Areas
+          {showZoneInfo ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+
+        {/* Environmental Zones Info Panel - Only shown when toggled */}
+        {showZoneInfo && zonesVisible && sensitiveZones.length > 0 && (
+          <div style={{
+            background: 'rgba(255,255,255,0.95)',
+            padding: '1rem',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            width: '280px',
+            maxHeight: '280px',
+            overflowY: 'auto',
+            marginTop: '0.5rem'
+          }}>
+            <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', fontSize: '1rem', display: 'flex', alignItems: 'center' }}>
+              <Fish size={18} style={{ marginRight: '0.5rem' }} />
+              Protected Areas
+            </h4>
+            
+            {sensitiveZones.slice(0, 5).map(zone => (
+              <div
+                key={zone.id}
+                style={{
+                  padding: '0.5rem',
+                  marginBottom: '0.5rem',
+                  backgroundColor: '#f8f9fa',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.75rem',
+                  border: '1px solid #e9ecef',
+                  borderLeft: `4px solid ${
+                    zone.severity === 'critical' ? '#dc3545' :
+                    zone.severity === 'high' ? '#fd7e14' :
+                    zone.severity === 'medium' ? '#ffc107' : '#28a745'
+                  }`
+                }}
+                onClick={() => {
+                  if (mapInstance.current && zone.center) {
+                    const L = window.L;
+                    // Calculate appropriate zoom level based on radius
+                    const zoomLevel = zone.radius > 200000 ? 4 : zone.radius > 100000 ? 5 : 6;
+                    mapInstance.current.setView(zone.center, zoomLevel);
+                  }
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {zone.name.length > 25 ? zone.name.substring(0, 25) + '...' : zone.name}
+                </div>
+                <div style={{ color: '#6c757d', marginBottom: '0.25rem' }}>
+                  {zone.type.replace(/_/g, ' ').toUpperCase()} • {zone.severity.toUpperCase()}
+                </div>
+                <div style={{ color: '#495057', fontSize: '0.7rem' }}>
+                  Radius: {(zone.radius / 1000).toFixed(0)} km
+                </div>
               </div>
-            </div>
-          ))}
-          
-          {sensitiveZones.length > 4 && (
-            <div style={{ fontSize: '0.75rem', color: '#6c757d', textAlign: 'center', fontStyle: 'italic' }}>
-              +{sensitiveZones.length - 4} more zones...
-            </div>
-          )}
-        </div>
-      )}
+            ))}
+            
+            {sensitiveZones.length > 5 && (
+              <div style={{ fontSize: '0.75rem', color: '#6c757d', textAlign: 'center', fontStyle: 'italic' }}>
+                +{sensitiveZones.length - 5} more zones...
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Map container */}
       <div

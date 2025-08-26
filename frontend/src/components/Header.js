@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Anchor, AlertTriangle, BarChart3, Info } from 'lucide-react';
+import { Search, Anchor, AlertTriangle, FileText, Info } from 'lucide-react';
 
 const Header = ({ activeSection, setActiveSection }) => {
   return (
@@ -48,7 +48,7 @@ const Header = ({ activeSection, setActiveSection }) => {
           {[
             { icon: Search, label: 'Ship Tracker', id: 'tracker' },
             { icon: AlertTriangle, label: 'Marine Zones', id: 'zones' },
-            { icon: BarChart3, label: 'Analytics', id: 'analytics' },
+            { icon: FileText, label: 'Reporting', id: 'reporting' },
             { icon: Info, label: 'About', id: 'about' }
           ].map(item => (
             <div
