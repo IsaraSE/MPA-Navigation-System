@@ -147,14 +147,21 @@ A feature is considered "Done" when:
 
 ---
 
+Got it 👍 Since **EcoMarineWay** is a maritime navigation + reporting app, the risk management table should be tailored to its domain instead of payment/donation risks. Here’s an updated version:
+
+---
+
 ## ⚠️ Risk Management
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Feature creep | Timeline delays | Strict backlog control, MoSCoW prioritization |
-| Payment integration delays | Blocked donation flow | Prioritize Stripe; PayPal as stretch goal |
-| Poor donor trust | Low conversion | Usability testing, trust badges, clear impact data |
-| Team bandwidth | Missed deadlines | Parallel frontend/backend work, reuse components |
+| Risk                                                        | Impact                                                               | Mitigation                                                                                                               |
+| ----------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Inaccurate or missing marine data (MPA boundaries, reports) | Ships may not receive correct alerts → reduces reliability of system | Use reliable open-data sources (e.g., government, NGOs), allow community validation of reports, maintain update pipeline |
+| Poor internet connectivity at sea                           | Users may lose access to map and alerts in critical moments          | Provide offline caching of MPA boundaries, queue reports for sync when online                                            |
+| Over-reporting / false reporting by users                   | Map clutter, unreliable alerts                                       | Add basic moderation (admin role), allow users to flag/report incorrect entries, filter by trusted sources               |
+| Performance issues on low-power ship devices                | Laggy map rendering or slow API responses                            | Optimize map with lazy loading & clustering, lightweight UI, caching of common queries                                   |
+| Limited adoption by ship crews                              | Low engagement and limited reporting → app loses value               | Conduct early user testing with seafarers, design simple UI, provide training/demo materials                             |
+| Security vulnerabilities (data leaks, account misuse)       | Compromised trust, data misuse                                       | Implement HTTPS, JWT authentication, regular security audits, minimal PII storage                                        |
+| Team workload and tight sprint schedule                     | Risk of incomplete features within 8 weeks                           | Prioritize MVP scope, parallelize frontend/backend tasks, reuse existing libraries                                       |
 
 ---
 
