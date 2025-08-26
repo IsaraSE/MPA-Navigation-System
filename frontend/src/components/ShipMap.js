@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2 } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff } from 'lucide-react';
 
-const ShipMap = () => {
+const ShipMapWithZones = () => {
   const mapRef = useRef(null);
   const [vessels, setVessels] = useState([]);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -10,15 +10,19 @@ const ShipMap = () => {
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sensitiveZones, setSensitiveZones] = useState([]);
+  const [zonesVisible, setZonesVisible] = useState(true);
+  const [loadingZones, setLoadingZones] = useState(false);
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
+  const zonesLayerRef = useRef(null);
 
   // Enhanced error handling for Leaflet loading
   useEffect(() => {
     let leafletCheckInterval;
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds timeout
+    const maxAttempts = 50;
 
     const checkLeaflet = () => {
       attempts++;
@@ -43,13 +47,11 @@ const ShipMap = () => {
   useEffect(() => {
     const loadLeaflet = async () => {
       try {
-        // Check if already loaded
         if (window.L) {
           setLeafletLoaded(true);
           return;
         }
 
-        // Load CSS
         if (!document.querySelector('link[href*="leaflet"]')) {
           const cssLink = document.createElement('link');
           cssLink.rel = 'stylesheet';
@@ -58,7 +60,6 @@ const ShipMap = () => {
           document.head.appendChild(cssLink);
         }
 
-        // Load JS
         if (!document.querySelector('script[src*="leaflet"]')) {
           const script = document.createElement('script');
           script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
@@ -79,7 +80,6 @@ const ShipMap = () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
-      // Cleanup map instance
       if (mapInstance.current) {
         try {
           mapInstance.current.remove();
@@ -91,36 +91,194 @@ const ShipMap = () => {
     };
   }, []);
 
-  // Initialize map with error handling
+  // Fetch Marine Protected Areas from ProtectedPlanet API
+  const fetchMarineProtectedAreas = async () => {
+    try {
+      setLoadingZones(true);
+      
+      // Using ProtectedPlanet API (World Database on Protected Areas)
+      // This is a simplified approach - in production you'd want to fetch based on map bounds
+      const response = await fetch(
+        'https://api.protectedplanet.net/v3/protected_areas?filter[designation]=National%20Marine%20Sanctuary,Marine%20Protected%20Area,Marine%20Reserve&per_page=50',
+        {
+          headers: {
+            'Accept': 'application/vnd.api+json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch protected areas');
+      }
+
+      const data = await response.json();
+      return data.data || [];
+    } catch (error) {
+      console.warn('ProtectedPlanet API error, using fallback data:', error);
+      return getFallbackSensitiveZones();
+    } finally {
+      setLoadingZones(false);
+    }
+  };
+
+  // Fetch from OpenStreetMap Overpass API for marine protected areas
+  const fetchOSMMarineAreas = async () => {
+    try {
+      const overpassQuery = `
+        [out:json][timeout:25];
+        (
+          relation[boundary=protected_area][protect_class~"^(1|2|3|4|5|6)$"][marine=yes];
+          relation[boundary=national_park][marine=yes];
+          relation[leisure=nature_reserve][marine=yes];
+        );
+        out geom;
+      `;
+
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'data=' + encodeURIComponent(overpassQuery)
+      });
+
+      if (!response.ok) {
+        throw new Error('OSM Overpass API error');
+      }
+
+      const data = await response.json();
+      return data.elements || [];
+    } catch (error) {
+      console.warn('OSM API error:', error);
+      return [];
+    }
+  };
+
+  // Fallback sensitive zones data (real-world locations)
+  const getFallbackSensitiveZones = () => {
+    return [
+      {
+        id: 'great_barrier_reef',
+        name: 'Great Barrier Reef Marine Park',
+        type: 'marine_protected_area',
+        coordinates: [
+          [-10.5, 142.0], [-10.5, 145.8], [-24.5, 145.8], [-24.5, 142.0], [-10.5, 142.0]
+        ],
+        description: 'World Heritage marine protected area',
+        restrictions: 'No anchoring, speed restrictions, waste discharge prohibited',
+        authority: 'Great Barrier Reef Marine Park Authority',
+        severity: 'high'
+      },
+      {
+        id: 'monterey_bay',
+        name: 'Monterey Bay National Marine Sanctuary',
+        type: 'national_marine_sanctuary',
+        coordinates: [
+          [35.5, -121.0], [35.5, -122.5], [37.0, -122.5], [37.0, -121.0], [35.5, -121.0]
+        ],
+        description: 'Critical habitat for marine mammals and seabirds',
+        restrictions: 'Speed restrictions for whale protection, no dumping',
+        authority: 'NOAA',
+        severity: 'high'
+      },
+      {
+        id: 'wadden_sea',
+        name: 'Wadden Sea World Heritage Site',
+        type: 'world_heritage_site',
+        coordinates: [
+          [53.3, 6.0], [53.3, 8.5], [55.0, 8.5], [55.0, 6.0], [53.3, 6.0]
+        ],
+        description: 'Tidal flat ecosystem, critical for migratory birds',
+        restrictions: 'Seasonal navigation restrictions, draft limitations',
+        authority: 'Trilateral Wadden Sea Cooperation',
+        severity: 'medium'
+      },
+      {
+        id: 'galapagos_marine_reserve',
+        name: 'Galápagos Marine Reserve',
+        type: 'marine_reserve',
+        coordinates: [
+          [1.5, -92.0], [1.5, -89.0], [-1.5, -89.0], [-1.5, -92.0], [1.5, -92.0]
+        ],
+        description: 'Unique ecosystem with endemic species',
+        restrictions: 'Restricted access, authorized vessels only',
+        authority: 'Galápagos National Park Service',
+        severity: 'critical'
+      },
+      {
+        id: 'antarctic_specially_protected',
+        name: 'Antarctic Specially Protected Area',
+        type: 'specially_protected_area',
+        coordinates: [
+          [-60.0, -65.0], [-60.0, -55.0], [-65.0, -55.0], [-65.0, -65.0], [-60.0, -65.0]
+        ],
+        description: 'Pristine Antarctic marine environment',
+        restrictions: 'Permit required, environmental impact assessment',
+        authority: 'Antarctic Treaty System',
+        severity: 'critical'
+      },
+      {
+        id: 'north_sea_natura2000',
+        name: 'North Sea Natura 2000 Sites',
+        type: 'natura2000',
+        coordinates: [
+          [54.0, 3.0], [54.0, 7.0], [56.0, 7.0], [56.0, 3.0], [54.0, 3.0]
+        ],
+        description: 'European network of protected marine areas',
+        restrictions: 'Seasonal fishing restrictions, seabird protection',
+        authority: 'European Union',
+        severity: 'medium'
+      },
+      {
+        id: 'coral_triangle',
+        name: 'Coral Triangle Marine Protected Area',
+        type: 'marine_biodiversity_hotspot',
+        coordinates: [
+          [-5.0, 110.0], [-5.0, 135.0], [5.0, 135.0], [5.0, 110.0], [-5.0, 110.0]
+        ],
+        description: 'Global center of marine biodiversity',
+        restrictions: 'Coral protection measures, anchor restrictions',
+        authority: 'Coral Triangle Initiative',
+        severity: 'high'
+      },
+      {
+        id: 'mediterranean_spami',
+        name: 'Mediterranean SPAMI Network',
+        type: 'specially_protected_area',
+        coordinates: [
+          [36.0, 0.0], [36.0, 15.0], [42.0, 15.0], [42.0, 0.0], [36.0, 0.0]
+        ],
+        description: 'Specially Protected Areas of Mediterranean Importance',
+        restrictions: 'Habitat protection, fishing regulations',
+        authority: 'UNEP-MAP',
+        severity: 'medium'
+      }
+    ];
+  };
+
+  // Initialize map
   const initializeMap = () => {
     if (!mapRef.current || mapInstance.current || !window.L || error) return;
 
     try {
       const L = window.L;
       
-      // Create map with disabled default zoom control
       mapInstance.current = L.map(mapRef.current, {
         center: [20, 0],
         zoom: 2,
-        zoomControl: false, // Disable default zoom control
+        zoomControl: false,
         attributionControl: true,
-        preferCanvas: true // Better performance
+        preferCanvas: true
       });
 
-      // Add multiple tile layer options with fallbacks
       const primaryTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '© Esri',
         maxZoom: 18,
         errorTileUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiBmaWxsPSIjZGRkIi8+Cjx0ZXh0IHg9IjEyOCIgeT0iMTI4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5NYXAgVGlsZTwvdGV4dD4KPC9zdmc+'
       });
 
-      primaryTileLayer.on('tileerror', (e) => {
-        console.warn('Tile loading error:', e);
-      });
-
       primaryTileLayer.addTo(mapInstance.current);
 
-      // Add ocean labels overlay with error handling
       try {
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
           attribution: '© CARTO',
@@ -133,11 +291,141 @@ const ShipMap = () => {
 
       setMapInitialized(true);
       initializeVessels();
+      loadSensitiveZones();
 
     } catch (error) {
       console.error('Map initialization error:', error);
       setError('Failed to initialize map: ' + error.message);
     }
+  };
+
+  // Load sensitive zones
+  const loadSensitiveZones = async () => {
+    try {
+      setLoadingZones(true);
+      
+      // Try to fetch from APIs, fallback to local data
+      let zones = [];
+      
+      try {
+        // Uncomment to use real APIs (may require API keys or have CORS issues)
+        // const protectedAreas = await fetchMarineProtectedAreas();
+        // const osmAreas = await fetchOSMMarineAreas();
+        // zones = [...protectedAreas, ...osmAreas];
+        
+        // For now, using fallback data with real-world coordinates
+        zones = getFallbackSensitiveZones();
+      } catch (apiError) {
+        console.warn('API fetch failed, using fallback:', apiError);
+        zones = getFallbackSensitiveZones();
+      }
+
+      setSensitiveZones(zones);
+      addSensitiveZonesToMap(zones);
+      
+    } catch (error) {
+      console.error('Error loading sensitive zones:', error);
+      setSensitiveZones(getFallbackSensitiveZones());
+    } finally {
+      setLoadingZones(false);
+    }
+  };
+
+  // Add sensitive zones to map
+  const addSensitiveZonesToMap = (zones) => {
+    if (!mapInstance.current || !window.L) return;
+
+    try {
+      const L = window.L;
+
+      // Create layer group for zones
+      if (zonesLayerRef.current) {
+        mapInstance.current.removeLayer(zonesLayerRef.current);
+      }
+      zonesLayerRef.current = L.layerGroup().addTo(mapInstance.current);
+
+      zones.forEach(zone => {
+        try {
+          const severityConfig = {
+            critical: { color: '#dc3545', fillOpacity: 0.3, weight: 3 },
+            high: { color: '#fd7e14', fillOpacity: 0.25, weight: 2 },
+            medium: { color: '#ffc107', fillOpacity: 0.2, weight: 2 },
+            low: { color: '#28a745', fillOpacity: 0.15, weight: 1 }
+          };
+
+          const config = severityConfig[zone.severity] || severityConfig.medium;
+
+          // Create polygon
+          const polygon = L.polygon(zone.coordinates, {
+            ...config,
+            dashArray: zone.severity === 'critical' ? '10,10' : null
+          });
+
+          // Add popup with zone information
+          const popupContent = `
+            <div style="font-family: 'Arial', sans-serif; min-width: 250px; max-width: 300px;">
+              <h3 style="margin: 0 0 10px 0; color: #2c3e50; display: flex; align-items: center;">
+                <span style="color: ${config.color}; margin-right: 8px;">
+                  ${zone.severity === 'critical' ? '🚫' : zone.severity === 'high' ? '⚠️' : zone.severity === 'medium' ? '⚡' : '🛡️'}
+                </span>
+                ${zone.name}
+              </h3>
+              <p><strong>Type:</strong> ${zone.type.replace(/_/g, ' ').toUpperCase()}</p>
+              <p><strong>Description:</strong> ${zone.description}</p>
+              <p><strong>Authority:</strong> ${zone.authority}</p>
+              <div style="background: #f8f9fa; padding: 8px; border-left: 4px solid ${config.color}; margin: 10px 0;">
+                <strong>Restrictions:</strong><br>
+                ${zone.restrictions}
+              </div>
+              <p style="color: ${config.color}; font-weight: bold; margin: 5px 0;">
+                Severity: ${zone.severity.toUpperCase()}
+              </p>
+            </div>
+          `;
+
+          polygon.bindPopup(popupContent);
+
+          // Add to layer group
+          polygon.addTo(zonesLayerRef.current);
+
+          // Add zone center marker for better visibility
+          if (zone.coordinates && zone.coordinates.length > 2) {
+            const bounds = L.polygon(zone.coordinates).getBounds();
+            const center = bounds.getCenter();
+
+            const zoneMarker = L.circleMarker(center, {
+              radius: 8,
+              fillColor: config.color,
+              color: '#fff',
+              weight: 2,
+              opacity: 1,
+              fillOpacity: 0.8
+            });
+
+            zoneMarker.bindPopup(popupContent);
+            zoneMarker.addTo(zonesLayerRef.current);
+          }
+
+        } catch (zoneError) {
+          console.warn(`Error adding zone ${zone.name}:`, zoneError);
+        }
+      });
+
+    } catch (error) {
+      console.error('Error adding zones to map:', error);
+    }
+  };
+
+  // Toggle zones visibility
+  const toggleZonesVisibility = () => {
+    if (!mapInstance.current || !zonesLayerRef.current) return;
+
+    if (zonesVisible) {
+      mapInstance.current.removeLayer(zonesLayerRef.current);
+    } else {
+      zonesLayerRef.current.addTo(mapInstance.current);
+    }
+    setZonesVisible(!zonesVisible);
   };
 
   // Initialize map when ready
@@ -147,7 +435,7 @@ const ShipMap = () => {
     }
   }, [leafletLoaded, mapInitialized, error]);
 
-  // Enhanced ship icon creation with error handling
+  // Enhanced ship icon creation
   const createShipIcon = (heading = 0, type = 'default', speed = 0, name = '', status = 'underway') => {
     if (!window.L) return null;
 
@@ -240,7 +528,7 @@ const ShipMap = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  // Ocean routes with validation
+  // Ocean routes
   const getOceanRoute = (routeName) => {
     const routes = {
       'transatlantic': [
@@ -259,7 +547,7 @@ const ShipMap = () => {
     return routes[routeName] || routes['transatlantic'];
   };
 
-  // Initialize vessels with error handling
+  // Initialize vessels
   const initializeVessels = () => {
     try {
       const ships = [
@@ -318,90 +606,6 @@ const ShipMap = () => {
           status: 'underway',
           destination: 'Singapore',
           flag: 'South Africa'
-        },
-        {
-          mmsi: '622456789',
-          name: 'Suez Express',
-          type: 'container',
-          speed: 19.4,
-          route: getOceanRoute('suez_canal'),
-          currentWaypoint: 0,
-          lat: 31.3,
-          lon: 32.3,
-          heading: 135,
-          status: 'underway',
-          destination: 'Mumbai',
-          flag: 'Egypt'
-        },
-        {
-          mmsi: '351789456',
-          name: 'Panama Pride',
-          type: 'cargo',
-          speed: 13.7,
-          route: getOceanRoute('panama_canal'),
-          currentWaypoint: 0,
-          lat: 25.8,
-          lon: -80.2,
-          heading: 225,
-          status: 'underway',
-          destination: 'Callao',
-          flag: 'Panama'
-        },
-        {
-          mmsi: '257891234',
-          name: 'Arctic Pioneer',
-          type: 'tanker',
-          speed: 8.5,
-          route: getOceanRoute('arctic_route'),
-          currentWaypoint: 0,
-          lat: 69.6,
-          lon: 18.9,
-          heading: 75,
-          status: 'underway',
-          destination: 'Nome',
-          flag: 'Norway'
-        },
-        {
-          mmsi: '219567890',
-          name: 'Baltic Trader',
-          type: 'ferry',
-          speed: 20.1,
-          route: getOceanRoute('baltic_north_sea'),
-          currentWaypoint: 0,
-          lat: 59.9,
-          lon: 10.7,
-          heading: 180,
-          status: 'underway',
-          destination: 'London',
-          flag: 'Norway'
-        },
-        {
-          mmsi: '538123789',
-          name: 'Indian Ocean Dream',
-          type: 'passenger',
-          speed: 22.3,
-          route: getOceanRoute('indian_ocean'),
-          currentWaypoint: 0,
-          lat: 1.3,
-          lon: 103.8,
-          heading: 215,
-          status: 'underway',
-          destination: 'Cape Town',
-          flag: 'Singapore'
-        },
-        {
-          mmsi: '308456123',
-          name: 'Caribbean Sunset',
-          type: 'cruise',
-          speed: 16.8,
-          route: getOceanRoute('caribbean'),
-          currentWaypoint: 0,
-          lat: 25.8,
-          lon: -80.2,
-          heading: 145,
-          status: 'underway',
-          destination: 'Aruba',
-          flag: 'Barbados'
         }
       ];
 
@@ -413,7 +617,7 @@ const ShipMap = () => {
     }
   };
 
-  // Add vessels to map with error handling
+  // Add vessels to map
   const addVesselsToMap = (ships) => {
     if (!mapInstance.current || !window.L || error) return;
 
@@ -439,7 +643,6 @@ const ShipMap = () => {
 
           marker.bindPopup(popupContent);
 
-          // Add route line
           const routeLine = L.polyline(vessel.route, {
             color: vessel.type === 'tanker' ? '#f39c12' : '#3498db',
             weight: 2,
@@ -457,7 +660,7 @@ const ShipMap = () => {
     }
   };
 
-  // Update positions with error handling
+  // Update positions
   const updateVesselPositions = () => {
     if (!mapInstance.current || !window.L || error) return;
 
@@ -493,7 +696,6 @@ const ShipMap = () => {
             const newLon = current[1] + (target[1] - current[1]) * speed;
             const bearing = calculateBearing(current[0], current[1], target[0], target[1]);
 
-            // Update marker
             const markerData = markersRef.current[vessel.mmsi];
             if (markerData && markerData.marker) {
               markerData.marker.setLatLng([newLat, newLon]);
@@ -552,7 +754,7 @@ const ShipMap = () => {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#f8f9fa',
-        border: "1px solid '#dee2e6",
+        border: "1px solid #dee2e6",
         borderRadius: '12px',
         color: '#dc3545',
         textAlign: 'center',
@@ -585,7 +787,7 @@ const ShipMap = () => {
       position: isFullscreen ? 'fixed' : 'relative', 
       top: isFullscreen ? 0 : 'auto',
       left: isFullscreen ? 0 : 'auto',
-      height: isFullscreen ? '100vh' : '400px', 
+      height: isFullscreen ? '100vh' : '500px', 
       width: isFullscreen ? '100vw' : '100%',
       zIndex: isFullscreen ? 9999 : 'auto',
       backgroundColor: isFullscreen ? '#000' : 'transparent'
@@ -607,7 +809,7 @@ const ShipMap = () => {
         }}>
           <div style={{ textAlign: 'center' }}>
             <Waves size={32} style={{ marginBottom: '1rem', animation: 'pulse 2s infinite' }} />
-            <div>Loading Maritime Map...</div>
+            <div>Loading Maritime Map with Environmental Zones...</div>
           </div>
         </div>
       )}
@@ -622,7 +824,7 @@ const ShipMap = () => {
         padding: '1rem',
         borderRadius: '8px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        minWidth: '200px'
+        minWidth: '220px'
       }}>
         <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
           <Navigation size={18} style={{ marginRight: '0.5rem' }} />
@@ -662,19 +864,92 @@ const ShipMap = () => {
           </button>
         </div>
 
-        <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>
+        <div style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '1rem' }}>
           <div>Vessels: {vessels.length}</div>
           <div style={{ color: isSimulating ? '#28a745' : '#dc3545' }}>
             {isSimulating ? 'Active' : 'Paused'}
           </div>
         </div>
+
+        {/* Environmental Zones Control */}
+        <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem' }}>
+          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+            <Shield size={16} style={{ marginRight: '0.5rem' }} />
+            Environmental Zones
+          </h5>
+          
+          <button
+            onClick={toggleZonesVisibility}
+            disabled={loadingZones}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: zonesVisible ? '#17a2b8' : '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: loadingZones ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              width: '100%',
+              justifyContent: 'center'
+            }}
+          >
+            {zonesVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+            {loadingZones ? 'Loading...' : (zonesVisible ? 'Hide Zones' : 'Show Zones')}
+          </button>
+
+          <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
+            {sensitiveZones.length} zones loaded
+          </div>
+        </div>
       </div>
+
+      {/* Environmental Zones Legend - Bottom Left */}
+      {zonesVisible && sensitiveZones.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: '1rem',
+          zIndex: 1000,
+          background: 'rgba(255,255,255,0.95)',
+          padding: '1rem',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          maxWidth: '280px'
+        }}>
+          <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+            <Leaf size={16} style={{ marginRight: '0.5rem' }} />
+            Zone Severity Legend
+          </h5>
+          
+          <div style={{ fontSize: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#dc3545', marginRight: '0.5rem', borderRadius: '2px' }}></div>
+              <span>Critical - Restricted Access</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#fd7e14', marginRight: '0.5rem', borderRadius: '2px' }}></div>
+              <span>High - Special Precautions</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#ffc107', marginRight: '0.5rem', borderRadius: '2px' }}></div>
+              <span>Medium - Regulated Activity</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ width: '12px', height: '12px', backgroundColor: '#28a745', marginRight: '0.5rem', borderRadius: '2px' }}></div>
+              <span>Low - Protected Area</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Map Zoom Controls - Top Right */}
       <div style={{
         position: 'absolute',
         top: '1rem',
-        right: vessels.length > 0 ? '270px' : '1rem', // Adjust based on vessel list
+        right: vessels.length > 0 ? '270px' : '1rem',
         zIndex: 1000,
         display: 'flex',
         flexDirection: 'column',
@@ -812,6 +1087,68 @@ const ShipMap = () => {
         </div>
       )}
 
+      {/* Environmental Zones Info Panel - Right Side */}
+      {zonesVisible && sensitiveZones.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: vessels.length > 0 ? '320px' : '1rem',
+          right: '1rem',
+          zIndex: 1000,
+          background: 'rgba(255,255,255,0.95)',
+          padding: '1rem',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          width: '250px',
+          maxHeight: '250px',
+          overflowY: 'auto'
+        }}>
+          <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+            <Fish size={18} style={{ marginRight: '0.5rem' }} />
+            Protected Areas
+          </h4>
+          
+          {sensitiveZones.slice(0, 4).map(zone => (
+            <div
+              key={zone.id}
+              style={{
+                padding: '0.5rem',
+                marginBottom: '0.5rem',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                border: '1px solid #e9ecef',
+                borderLeft: `4px solid ${
+                  zone.severity === 'critical' ? '#dc3545' :
+                  zone.severity === 'high' ? '#fd7e14' :
+                  zone.severity === 'medium' ? '#ffc107' : '#28a745'
+                }`
+              }}
+              onClick={() => {
+                if (mapInstance.current && zone.coordinates && zone.coordinates.length > 2) {
+                  const L = window.L;
+                  const bounds = L.polygon(zone.coordinates).getBounds();
+                  mapInstance.current.fitBounds(bounds);
+                }
+              }}
+            >
+              <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                {zone.name.length > 25 ? zone.name.substring(0, 25) + '...' : zone.name}
+              </div>
+              <div style={{ color: '#6c757d' }}>
+                {zone.type.replace(/_/g, ' ').toUpperCase()} • {zone.severity.toUpperCase()}
+              </div>
+            </div>
+          ))}
+          
+          {sensitiveZones.length > 4 && (
+            <div style={{ fontSize: '0.75rem', color: '#6c757d', textAlign: 'center', fontStyle: 'italic' }}>
+              +{sensitiveZones.length - 4} more zones...
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Map container */}
       <div
         ref={mapRef}
@@ -826,4 +1163,4 @@ const ShipMap = () => {
   );
 };
 
-export default ShipMap;
+export default ShipMapWithZones;
