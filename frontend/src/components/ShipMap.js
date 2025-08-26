@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2 } from 'lucide-react';
 
 const ShipMap = () => {
   const mapRef = useRef(null);
@@ -9,6 +9,7 @@ const ShipMap = () => {
   const [mapInitialized, setMapInitialized] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
   const [error, setError] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
@@ -97,11 +98,11 @@ const ShipMap = () => {
     try {
       const L = window.L;
       
-      // Create map with better error handling
+      // Create map with disabled default zoom control
       mapInstance.current = L.map(mapRef.current, {
         center: [20, 0],
         zoom: 2,
-        zoomControl: true,
+        zoomControl: false, // Disable default zoom control
         attributionControl: true,
         preferCanvas: true // Better performance
       });
@@ -216,6 +217,29 @@ const ShipMap = () => {
     }
   };
 
+  // Map control functions
+  const zoomIn = () => {
+    if (mapInstance.current) {
+      mapInstance.current.zoomIn();
+    }
+  };
+
+  const zoomOut = () => {
+    if (mapInstance.current) {
+      mapInstance.current.zoomOut();
+    }
+  };
+
+  const resetView = () => {
+    if (mapInstance.current) {
+      mapInstance.current.setView([20, 0], 2);
+    }
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
   // Ocean routes with validation
   const getOceanRoute = (routeName) => {
     const routes = {
@@ -294,6 +318,90 @@ const ShipMap = () => {
           status: 'underway',
           destination: 'Singapore',
           flag: 'South Africa'
+        },
+        {
+          mmsi: '622456789',
+          name: 'Suez Express',
+          type: 'container',
+          speed: 19.4,
+          route: getOceanRoute('suez_canal'),
+          currentWaypoint: 0,
+          lat: 31.3,
+          lon: 32.3,
+          heading: 135,
+          status: 'underway',
+          destination: 'Mumbai',
+          flag: 'Egypt'
+        },
+        {
+          mmsi: '351789456',
+          name: 'Panama Pride',
+          type: 'cargo',
+          speed: 13.7,
+          route: getOceanRoute('panama_canal'),
+          currentWaypoint: 0,
+          lat: 25.8,
+          lon: -80.2,
+          heading: 225,
+          status: 'underway',
+          destination: 'Callao',
+          flag: 'Panama'
+        },
+        {
+          mmsi: '257891234',
+          name: 'Arctic Pioneer',
+          type: 'tanker',
+          speed: 8.5,
+          route: getOceanRoute('arctic_route'),
+          currentWaypoint: 0,
+          lat: 69.6,
+          lon: 18.9,
+          heading: 75,
+          status: 'underway',
+          destination: 'Nome',
+          flag: 'Norway'
+        },
+        {
+          mmsi: '219567890',
+          name: 'Baltic Trader',
+          type: 'ferry',
+          speed: 20.1,
+          route: getOceanRoute('baltic_north_sea'),
+          currentWaypoint: 0,
+          lat: 59.9,
+          lon: 10.7,
+          heading: 180,
+          status: 'underway',
+          destination: 'London',
+          flag: 'Norway'
+        },
+        {
+          mmsi: '538123789',
+          name: 'Indian Ocean Dream',
+          type: 'passenger',
+          speed: 22.3,
+          route: getOceanRoute('indian_ocean'),
+          currentWaypoint: 0,
+          lat: 1.3,
+          lon: 103.8,
+          heading: 215,
+          status: 'underway',
+          destination: 'Cape Town',
+          flag: 'Singapore'
+        },
+        {
+          mmsi: '308456123',
+          name: 'Caribbean Sunset',
+          type: 'cruise',
+          speed: 16.8,
+          route: getOceanRoute('caribbean'),
+          currentWaypoint: 0,
+          lat: 25.8,
+          lon: -80.2,
+          heading: 145,
+          status: 'underway',
+          destination: 'Aruba',
+          flag: 'Barbados'
         }
       ];
 
@@ -439,7 +547,7 @@ const ShipMap = () => {
   if (error) {
     return (
       <div style={{
-        height: '400px',
+        height: isFullscreen ? '100vh' : '400px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -473,7 +581,15 @@ const ShipMap = () => {
   }
 
   return (
-    <div style={{ position: 'relative', height: '400px', width: '100%' }}>
+    <div style={{ 
+      position: isFullscreen ? 'fixed' : 'relative', 
+      top: isFullscreen ? 0 : 'auto',
+      left: isFullscreen ? 0 : 'auto',
+      height: isFullscreen ? '100vh' : '400px', 
+      width: isFullscreen ? '100vw' : '100%',
+      zIndex: isFullscreen ? 9999 : 'auto',
+      backgroundColor: isFullscreen ? '#000' : 'transparent'
+    }}>
       {/* Loading overlay */}
       {!mapInitialized && (
         <div style={{
@@ -496,7 +612,7 @@ const ShipMap = () => {
         </div>
       )}
 
-      {/* Control Panel */}
+      {/* Fleet Control Panel - Top Left */}
       <div style={{
         position: 'absolute',
         top: '1rem',
@@ -554,7 +670,101 @@ const ShipMap = () => {
         </div>
       </div>
 
-      {/* Vessel List */}
+      {/* Map Zoom Controls - Top Right */}
+      <div style={{
+        position: 'absolute',
+        top: '1rem',
+        right: vessels.length > 0 ? '270px' : '1rem', // Adjust based on vessel list
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem'
+      }}>
+        <button
+          onClick={zoomIn}
+          disabled={!mapInitialized}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: mapInitialized ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            color: '#333'
+          }}
+          title="Zoom In"
+        >
+          <ZoomIn size={18} />
+        </button>
+        
+        <button
+          onClick={zoomOut}
+          disabled={!mapInitialized}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: mapInitialized ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            color: '#333'
+          }}
+          title="Zoom Out"
+        >
+          <ZoomOut size={18} />
+        </button>
+        
+        <button
+          onClick={resetView}
+          disabled={!mapInitialized}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: mapInitialized ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            color: '#333'
+          }}
+          title="Reset View"
+        >
+          <Home size={18} />
+        </button>
+
+        <button
+          onClick={toggleFullscreen}
+          style={{
+            width: '40px',
+            height: '40px',
+            backgroundColor: 'rgba(255,255,255,0.95)',
+            border: '1px solid #ddd',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            color: '#333'
+          }}
+          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+        >
+          {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+        </button>
+      </div>
+
+      {/* Vessel List - Far Right */}
       {vessels.length > 0 && (
         <div style={{
           position: 'absolute',
@@ -565,7 +775,7 @@ const ShipMap = () => {
           padding: '1rem',
           borderRadius: '8px',
           boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          maxWidth: '250px',
+          width: '250px',
           maxHeight: '300px',
           overflowY: 'auto'
         }}>
@@ -609,7 +819,7 @@ const ShipMap = () => {
           height: '100%',
           width: '100%',
           backgroundColor: '#e9ecef',
-          borderRadius: '12px'
+          borderRadius: isFullscreen ? '0' : '12px'
         }}
       />
     </div>
