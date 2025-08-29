@@ -1,70 +1,188 @@
-# Getting Started with Create React App
+# EcoNav MPA Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern React-based frontend for the EcoNav Maritime Protected Area Navigation System, built with Tailwind CSS.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+### Authentication
+- **Login Page**: Secure user authentication with email and password
+- **Register Page**: User registration with vessel information
+- **Protected Routes**: Automatic redirection for unauthenticated users
+- **JWT Token Management**: Secure token-based authentication
 
-### `npm start`
+### User Interface
+- **Modern Design**: Clean, responsive interface with maritime theme
+- **Tailwind CSS**: Utility-first CSS framework for rapid development
+- **Responsive Layout**: Works perfectly on desktop, tablet, and mobile
+- **Toast Notifications**: User feedback for all operations
+- **Loading States**: Smooth loading indicators throughout the app
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Dashboard
+- **Welcome Section**: Personalized greeting with user information
+- **Statistics Cards**: Key metrics display (Active Vessels, Protected Areas, etc.)
+- **Quick Actions**: Easy access to main features
+- **Recent Activity**: Real-time activity feed
+- **Vessel Information**: Display user's vessel details
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Technology Stack
 
-### `npm test`
+- **React 19.1.1**: Modern React with hooks
+- **React Router DOM 6.8.0**: Client-side routing
+- **Tailwind CSS 3.4.0**: Utility-first CSS framework
+- **Axios 1.6.0**: HTTP client for API communication
+- **React Hook Form 7.48.0**: Form handling and validation
+- **React Hot Toast 2.4.1**: Toast notifications
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Project Structure
 
-### `npm run build`
+```
+src/
+├── components/
+│   └── ProtectedRoute.js    # Authentication guard component
+├── context/
+│   └── AuthContext.js       # Authentication state management
+├── pages/
+│   ├── Login.js             # Login page
+│   ├── Register.js          # Registration page
+│   └── Dashboard.js         # Main dashboard/home page
+├── services/
+│   ├── api.js              # Axios configuration
+│   └── authService.js      # Authentication API calls
+├── App.js                  # Main app with routing
+└── index.css               # Tailwind CSS imports
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Prerequisites
+- Node.js (v14 or higher)
+- npm or yarn
+- Backend server running (see backend README)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+1. Navigate to the frontend directory:
+```bash
+cd MPA-Navigation-System/frontend
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. Install dependencies:
+```bash
+npm install
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. Start the development server:
+```bash
+npm start
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+The application will open at `http://localhost:3000`
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## API Integration
 
-## Learn More
+The frontend communicates with the backend through RESTful APIs:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Authentication Endpoints
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### User Data Structure
+```javascript
+{
+  name: "John Doe",
+  email: "john@example.com",
+  role: "captain", // sailor, captain, admin
+  vesselName: "Ocean Explorer",
+  vesselType: "cargo", // cargo, fishing, pleasure, tanker, passenger, other
+  isActive: true
+}
+```
 
-### Code Splitting
+## User Roles
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Sailor
+- Basic crew member
+- Can view navigation data
+- Limited system access
 
-### Analyzing the Bundle Size
+### Captain
+- Vessel commander
+- Enhanced navigation access
+- Crew management capabilities
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Admin
+- System administrator
+- Full user management access
+- System configuration privileges
 
-### Making a Progressive Web App
+## Vessel Types
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Cargo**: Commercial cargo vessels
+- **Fishing**: Fishing vessels
+- **Pleasure**: Recreational vessels
+- **Tanker**: Oil and chemical tankers
+- **Passenger**: Passenger ships
+- **Other**: Miscellaneous vessels
 
-### Advanced Configuration
+## Design System
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Colors
+- **Primary**: Blue shades (#1e3a8a to #3b82f6)
+- **Maritime**: Ocean blue shades (#0ea5e9 to #0284c7)
+- **Success**: Green (#059669)
+- **Warning**: Orange (#d97706)
+- **Error**: Red (#dc2626)
 
-### Deployment
+### Typography
+- **Font Family**: Inter (Google Fonts)
+- **Weights**: 300, 400, 500, 600, 700
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Components
+- **Buttons**: Gradient backgrounds with hover effects
+- **Forms**: Clean input fields with validation states
+- **Cards**: White backgrounds with subtle shadows
+- **Navigation**: Responsive header with user info
 
-### `npm run build` fails to minify
+## Development
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Available Scripts
+
+- `npm start` - Start development server
+- `npm build` - Build for production
+- `npm test` - Run tests
+- `npm eject` - Eject from Create React App
+
+### Code Style
+
+- Follow React best practices
+- Use functional components with hooks
+- Implement proper error handling
+- Maintain responsive design
+- Follow maritime theme styling
+- Use Tailwind CSS utility classes
+
+## Deployment
+
+1. Build the application:
+```bash
+npm run build
+```
+
+2. Deploy the `build` folder to your web server
+
+3. Configure environment variables for production:
+```bash
+REACT_APP_API_URL=https://your-backend-url.com/api
+```
+
+## Contributing
+
+1. Follow the existing code structure
+2. Use Tailwind CSS for styling
+3. Add proper error handling
+4. Test on multiple devices
+5. Update documentation as needed
+
+## License
+
+This project is part of the EcoNav MPA Navigation System.
