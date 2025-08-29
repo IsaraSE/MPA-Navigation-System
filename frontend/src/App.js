@@ -5,14 +5,12 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './routes';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import React from "react";
-import Home from "./pages/Home";
+import Home from './pages/Home';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <Home />
         <div className="App">
           <Toaster
             position="top-right"
@@ -29,6 +27,16 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+
+            {/* Protected Routes */}
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Redirect root to login */}
             <Route path="/" element={<Navigate to="/login" replace />} />
