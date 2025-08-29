@@ -5,11 +5,14 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './routes';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import React from "react";
+import Home from "./pages/Home";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <Home />
         <div className="App">
           <Toaster
             position="top-right"
