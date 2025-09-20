@@ -12,7 +12,9 @@ router.use(auth);
 
 const userValidationRules = [
   body("name").notEmpty().withMessage("Name is required"),
-  body("email").isEmail().withMessage("Valid email is required"),
+  body("email").isEmail()
+  .matches(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)
+  .withMessage("Valid email is required"),
   body("password")
     .optional({ checkFalsy: true }) // optional for updates
     .isLength({ min: 6 })
