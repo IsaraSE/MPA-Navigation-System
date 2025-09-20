@@ -30,7 +30,7 @@ function App() {
             <Route path="/register" element={<Register />} />
 
             {/* Redirect root to login */}
-            <Route path="/" element={<Navigate to="/home" replace />} />
+            <Route path="/" element={<Navigate to="/register" replace />} />
 
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/home" replace />} />
