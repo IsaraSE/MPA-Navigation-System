@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin, Bell, X, Gauge } from 'lucide-react';
 
 const ShipMapWithZones = () => {
   const mapRef = useRef(null);
@@ -17,11 +17,15 @@ const ShipMapWithZones = () => {
   const [showZoneInfo, setShowZoneInfo] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [currentZoom, setCurrentZoom] = useState(2);
+  const [alerts, setAlerts] = useState([]);
+  const [simulationSpeed, setSimulationSpeed] = useState(1);
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const zonesLayerRef = useRef(null);
   const zoneIconsLayerRef = useRef(null);
+  const alertTimeoutRef = useRef(null);
+  const alertedVesselsRef = useRef(new Set()); // Track which vessels have triggered alerts
 
   // Enhanced error handling for Leaflet loading
   useEffect(() => {
@@ -85,6 +89,9 @@ const ShipMapWithZones = () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      if (alertTimeoutRef.current) {
+        clearTimeout(alertTimeoutRef.current);
+      }
       if (mapInstance.current) {
         try {
           mapInstance.current.remove();
@@ -103,8 +110,8 @@ const ShipMapWithZones = () => {
         id: 'great_barrier_reef',
         name: 'Great Barrier Reef Marine Park',
         type: 'marine_protected_area',
-        center: [-16.0, 145.8], // Corrected to be in water near Queensland coast
-        radius: 200000, // 200km radius in meters
+        center: [-16.0, 145.8],
+        radius: 200000,
         description: 'World Heritage marine protected area',
         restrictions: 'No anchoring, speed restrictions, waste discharge prohibited',
         authority: 'Great Barrier Reef Marine Park Authority',
@@ -115,7 +122,7 @@ const ShipMapWithZones = () => {
         name: 'Monterey Bay National Marine Sanctuary',
         type: 'national_marine_sanctuary',
         center: [36.25, -121.75],
-        radius: 75000, // 75km radius
+        radius: 75000,
         description: 'Critical habitat for marine mammals and seabirds',
         restrictions: 'Speed restrictions for whale protection, no dumping',
         authority: 'NOAA',
@@ -126,7 +133,7 @@ const ShipMapWithZones = () => {
         name: 'Wadden Sea World Heritage Site',
         type: 'world_heritage_site',
         center: [54.15, 7.25],
-        radius: 120000, // 120km radius
+        radius: 120000,
         description: 'Tidal flat ecosystem, critical for migratory birds',
         restrictions: 'Seasonal navigation restrictions, draft limitations',
         authority: 'Trilateral Wadden Sea Cooperation',
@@ -136,8 +143,8 @@ const ShipMapWithZones = () => {
         id: 'galapagos_marine_reserve',
         name: 'Galápagos Marine Reserve',
         type: 'marine_reserve',
-        center: [-0.5, -90.0], // Adjusted to be more in water
-        radius: 150000, // 150km radius
+        center: [-0.5, -90.0],
+        radius: 150000,
         description: 'Unique ecosystem with endemic species',
         restrictions: 'Restricted access, authorized vessels only',
         authority: 'Galápagos National Park Service',
@@ -148,7 +155,7 @@ const ShipMapWithZones = () => {
         name: 'Antarctic Specially Protected Area',
         type: 'specially_protected_area',
         center: [-62.5, -60.0],
-        radius: 180000, // 180km radius
+        radius: 180000,
         description: 'Pristine Antarctic marine environment',
         restrictions: 'Permit required, environmental impact assessment',
         authority: 'Antarctic Treaty System',
@@ -159,7 +166,7 @@ const ShipMapWithZones = () => {
         name: 'North Sea Natura 2000 Sites',
         type: 'natura2000',
         center: [55.0, 5.0],
-        radius: 100000, // 100km radius
+        radius: 100000,
         description: 'European network of protected marine areas',
         restrictions: 'Seasonal fishing restrictions, seabird protection',
         authority: 'European Union',
@@ -170,7 +177,7 @@ const ShipMapWithZones = () => {
         name: 'Coral Triangle Marine Protected Area',
         type: 'marine_biodiversity_hotspot',
         center: [0.0, 122.5],
-        radius: 250000, // 250km radius
+        radius: 250000,
         description: 'Global center of marine biodiversity',
         restrictions: 'Coral protection measures, anchor restrictions',
         authority: 'Coral Triangle Initiative',
@@ -181,7 +188,7 @@ const ShipMapWithZones = () => {
         name: 'Mediterranean SPAMI Network',
         type: 'specially_protected_area',
         center: [39.0, 7.5],
-        radius: 80000, // 80km radius
+        radius: 80000,
         description: 'Specially Protected Areas of Mediterranean Importance',
         restrictions: 'Habitat protection, fishing regulations',
         authority: 'UNEP-MAP',
@@ -192,7 +199,7 @@ const ShipMapWithZones = () => {
         name: 'Bering Sea Marine Protected Area',
         type: 'marine_protected_area',
         center: [60.0, -175.0],
-        radius: 90000, // 90km radius
+        radius: 90000,
         description: 'Critical Arctic marine ecosystem',
         restrictions: 'Ice navigation protocols, wildlife protection',
         authority: 'NOAA Fisheries',
@@ -203,13 +210,157 @@ const ShipMapWithZones = () => {
         name: 'Gulf Stream Marine Sanctuary',
         type: 'marine_sanctuary',
         center: [35.0, -75.0],
-        radius: 60000, // 60km radius
+        radius: 60000,
         description: 'Important oceanic current system',
         restrictions: 'Current-sensitive navigation, protected species zones',
         authority: 'US Marine Sanctuary Program',
         severity: 'medium'
+      },
+      // New marine protected areas on real navigation routes
+      {
+        id: 'hawaii_humpback_whale',
+        name: 'Hawaiian Islands Humpback Whale Sanctuary',
+        type: 'marine_sanctuary',
+        center: [21.0, -157.0],
+        radius: 80000,
+        description: 'Critical habitat for humpback whales',
+        restrictions: 'Speed restrictions during whale season, no approaching whales',
+        authority: 'NOAA',
+        severity: 'high'
+      },
+      {
+        id: 'channel_islands',
+        name: 'Channel Islands Marine Sanctuary',
+        type: 'marine_sanctuary',
+        center: [34.0, -119.5],
+        radius: 70000,
+        description: 'Diverse marine ecosystem with unique species',
+        restrictions: 'No-take zones, restricted anchoring',
+        authority: 'NOAA',
+        severity: 'high'
+      },
+      {
+        id: 'suez_canal_protected',
+        name: 'Suez Canal Marine Protected Zone',
+        type: 'marine_protected_area',
+        center: [30.5, 32.3],
+        radius: 50000,
+        description: 'Critical shipping lane with environmental protections',
+        restrictions: 'Speed limits, no waste discharge, wildlife corridors',
+        authority: 'Suez Canal Authority',
+        severity: 'medium'
+      },
+      {
+        id: 'strait_malacca',
+        name: 'Strait of Malacca Protected Zone',
+        type: 'marine_protected_area',
+        center: [2.5, 101.0],
+        radius: 60000,
+        description: 'Busiest shipping lane with environmental safeguards',
+        restrictions: 'Traffic separation schemes, speed limits, no anchoring',
+        authority: 'IMO & Regional Cooperation',
+        severity: 'high'
       }
     ];
+  };
+
+  // Ocean routes that avoid land (verified to be in water)
+  const getOceanRoute = (routeName) => {
+    const routes = {
+      'transatlantic': [
+        [51.5, -0.12], [48.0, -20.0], [40.0, -50.0], [40.7, -74.0] // London to New York
+      ],
+      'transpacific': [
+        [35.6, 139.7], [40.0, 175.0], [45.0, -165.0], [37.7, -122.4] // Tokyo to San Francisco
+      ],
+      'mediterranean': [
+        [41.9, 12.5], [36.0, 18.0], [32.0, 30.0], [25.2, 55.3] // Rome to Dubai
+      ],
+      'cape_route': [
+        [-33.9, 18.4], [-35.0, 25.0], [-40.0, 60.0], [1.3, 103.8] // Cape Town to Singapore
+      ],
+      // New route that passes near the protected areas
+      'protected_area_route': [
+        [32.0, -120.0], [33.5, -121.0], [34.0, -119.5], [35.0, -118.0] // Passes near Channel Islands
+      ],
+      // Additional realistic routes
+      'suez_canal_route': [
+        [31.2, 29.9], [30.5, 32.3], [29.9, 32.6], [25.2, 55.3] // Alexandria to Dubai via Suez
+      ],
+      'malacca_strait_route': [
+        [1.3, 103.8], [2.5, 101.0], [5.0, 97.0], [13.7, 100.5] // Singapore to Bangkok via Malacca
+      ]
+    };
+    return routes[routeName] || routes['transatlantic'];
+  };
+
+  // Check if a vessel is near a protected zone
+  const checkZoneProximity = (vessel, zones) => {
+    const alerts = [];
+    const alertKey = `${vessel.mmsi}-${vessel.currentWaypoint}`;
+    
+    // Skip if this vessel has already triggered an alert for this waypoint
+    if (alertedVesselsRef.current.has(alertKey)) {
+      return alerts;
+    }
+    
+    zones.forEach(zone => {
+      const distance = calculateDistance(
+        vessel.lat, vessel.lon, 
+        zone.center[0], zone.center[1]
+      );
+      
+      // Alert if within 1.5x the zone radius
+      if (distance < zone.radius * 1.5) {
+        alerts.push({
+          id: `${vessel.mmsi}-${zone.id}-${Date.now()}`,
+          vessel: vessel.name,
+          zone: zone.name,
+          distance: Math.round(distance / 1000), // km
+          severity: zone.severity,
+          timestamp: new Date()
+        });
+        
+        // Mark this vessel as having triggered an alert for this waypoint
+        alertedVesselsRef.current.add(alertKey);
+      }
+    });
+    
+    return alerts;
+  };
+
+  // Calculate distance between two points (in meters)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000; // Earth's radius in meters
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  // Add alert to the system
+  const addAlert = (alert) => {
+    setAlerts(prev => {
+      // Check if similar alert already exists (same vessel and zone)
+      const exists = prev.some(a => 
+        a.vessel === alert.vessel && a.zone === alert.zone && 
+        (new Date() - a.timestamp) < 60000 // Within last minute
+      );
+      
+      if (!exists) {
+        return [alert, ...prev.slice(0, 9)]; // Keep only 10 latest alerts
+      }
+      return prev;
+    });
+  };
+
+  // Remove alert by ID
+  const removeAlert = (id) => {
+    setAlerts(prev => prev.filter(alert => alert.id !== id));
   };
 
   // Initialize map
@@ -230,7 +381,7 @@ const ShipMapWithZones = () => {
       const primaryTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '© Esri',
         maxZoom: 18,
-        errorTileUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiBmaWxsPSIjZGRkIi8+Cjx0ZXh0IHg9IjEyOCIgeT0iMTI4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5Ij5NYXAgVGlsZTwvdGV4dD4KPC9zdmc+'
+        errorTileUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5z='
       });
 
       primaryTileLayer.addTo(mapInstance.current);
@@ -366,7 +517,7 @@ const ShipMapWithZones = () => {
               </div>
               <div style="margin-bottom: 10px;">
                 <strong style="color: #495057;">Coverage:</strong> 
-                <span style="color: #6c757d;">${(zone.radius / 1000).toFixed(0)} km radius</span>
+                <span style="color: '6c757d';">${(zone.radius / 1000).toFixed(0)} km radius</span>
               </div>
               <p style="margin: 8px 0; color: #495057; line-height: 1.4;">
                 <strong>Description:</strong><br>
@@ -626,23 +777,18 @@ const ShipMapWithZones = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  // Ocean routes
-  const getOceanRoute = (routeName) => {
-    const routes = {
-      'transatlantic': [
-        [51.5, -0.12], [49.0, -15.0], [42.0, -45.0], [40.7, -74.0]
-      ],
-      'transpacific': [
-        [35.6, 139.7], [42.0, 170.0], [45.0, -160.0], [37.7, -122.4]
-      ],
-      'mediterranean': [
-        [41.9, 12.5], [35.0, 20.0], [30.0, 32.5], [25.2, 55.3]
-      ],
-      'cape_route': [
-        [-33.9, 18.4], [-30.0, 35.0], [0.0, 75.0], [1.3, 103.8]
-      ]
-    };
-    return routes[routeName] || routes['transatlantic'];
+  // Change simulation speed
+  const changeSimulationSpeed = () => {
+    const speeds = [1, 2, 5, 10];
+    const currentIndex = speeds.indexOf(simulationSpeed);
+    const nextIndex = (currentIndex + 1) % speeds.length;
+    setSimulationSpeed(speeds[nextIndex]);
+    
+    // Restart simulation with new speed
+    if (isSimulating) {
+      setIsSimulating(false);
+      setTimeout(() => setIsSimulating(true), 100);
+    }
   };
 
   // Initialize vessels
@@ -704,6 +850,51 @@ const ShipMapWithZones = () => {
           status: 'underway',
           destination: 'Singapore',
           flag: 'South Africa'
+        },
+        // New vessel that navigates close to protected areas
+        {
+          mmsi: '555666777',
+          name: 'Coastal Guardian',
+          type: 'naval',
+          speed: 12.5,
+          route: getOceanRoute('protected_area_route'),
+          currentWaypoint: 0,
+          lat: 32.0,
+          lon: -120.0,
+          heading: 45,
+          status: 'underway',
+          destination: 'Los Angeles',
+          flag: 'USA'
+        },
+        // Additional vessel near Suez Canal protected area
+        {
+          mmsi: '666777888',
+          name: 'Suez Mariner',
+          type: 'container',
+          speed: 15.0,
+          route: getOceanRoute('suez_canal_route'),
+          currentWaypoint: 0,
+          lat: 31.2,
+          lon: 29.9,
+          heading: 120,
+          status: 'underway',
+          destination: 'Dubai',
+          flag: 'Egypt'
+        },
+        // Additional vessel near Malacca Strait protected area
+        {
+          mmsi: '777888999',
+          name: 'Malacca Trader',
+          type: 'cargo',
+          speed: 13.5,
+          route: getOceanRoute('malacca_strait_route'),
+          currentWaypoint: 0,
+          lat: 1.3,
+          lon: 103.8,
+          heading: 330,
+          status: 'underway',
+          destination: 'Bangkok',
+          flag: 'Singapore'
         }
       ];
 
@@ -742,7 +933,9 @@ const ShipMapWithZones = () => {
           marker.bindPopup(popupContent);
 
           const routeLine = L.polyline(vessel.route, {
-            color: vessel.type === 'tanker' ? '#f39c12' : '#3498db',
+            color: vessel.type === 'tanker' ? '#f39c12' : 
+                   vessel.type === 'container' ? '#9b59b6' :
+                   vessel.type === 'cruise' ? '#1abc9c' : '#3498db',
             weight: 2,
             opacity: 0.7,
             dashArray: '5,5'
@@ -770,7 +963,18 @@ const ShipMapWithZones = () => {
             const currentWaypoint = vessel.currentWaypoint;
             
             if (currentWaypoint >= route.length - 1) {
-              return vessel;
+              // Reset alert tracking when vessel completes its route
+              const alertKey = `${vessel.mmsi}-${vessel.currentWaypoint}`;
+              if (alertedVesselsRef.current.has(alertKey)) {
+                alertedVesselsRef.current.delete(alertKey);
+              }
+              
+              return {
+                ...vessel,
+                currentWaypoint: 0,
+                lat: route[0][0],
+                lon: route[0][1]
+              };
             }
 
             const current = [vessel.lat, vessel.lon];
@@ -789,7 +993,7 @@ const ShipMapWithZones = () => {
               };
             }
 
-            const speed = 0.02;
+            const speed = 0.02 * simulationSpeed;
             const newLat = current[0] + (target[0] - current[0]) * speed;
             const newLon = current[1] + (target[1] - current[1]) * speed;
             const bearing = calculateBearing(current[0], current[1], target[0], target[1]);
@@ -802,6 +1006,15 @@ const ShipMapWithZones = () => {
                 markerData.marker.setIcon(newIcon);
               }
             }
+
+            // Check for proximity to protected zones
+            const zoneAlerts = checkZoneProximity(
+              {...vessel, lat: newLat, lon: newLon}, 
+              sensitiveZones
+            );
+            
+            // Add alerts if any
+            zoneAlerts.forEach(alert => addAlert(alert));
 
             return {
               ...vessel,
@@ -823,7 +1036,8 @@ const ShipMapWithZones = () => {
   // Simulation control
   useEffect(() => {
     if (isSimulating && mapInitialized && !error) {
-      intervalRef.current = setInterval(updateVesselPositions, 3000);
+      const intervalTime = 3000 / simulationSpeed;
+      intervalRef.current = setInterval(updateVesselPositions, intervalTime);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -835,7 +1049,7 @@ const ShipMapWithZones = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isSimulating, mapInitialized, error]);
+  }, [isSimulating, mapInitialized, error, simulationSpeed]);
 
   // Auto-start simulation
   useEffect(() => {
@@ -912,10 +1126,74 @@ const ShipMapWithZones = () => {
         </div>
       )}
 
+      {/* Alert notifications */}
+      {alerts.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 2000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+          maxWidth: '400px',
+          width: '90%'
+        }}>
+          {alerts.map(alert => (
+            <div
+              key={alert.id}
+              style={{
+                background: alert.severity === 'critical' ? 
+                  'linear-gradient(135deg, #dc3545, #c82333)' : 
+                  alert.severity === 'high' ? 
+                  'linear-gradient(135deg, #fd7e14, #e9690c)' : 
+                  'linear-gradient(135deg, #ffc107, #e6b400)',
+                color: 'white',
+                padding: '0.75rem 1rem',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                animation: 'slideIn 0.3s ease-out'
+              }}
+            >
+              <Bell size={20} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+                  {alert.vessel} near {alert.zone}
+                </div>
+                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                  {alert.distance} km away • {alert.severity.toUpperCase()} risk
+                </div>
+              </div>
+              <button
+                onClick={() => removeAlert(alert.id)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                title="Dismiss alert"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Collapsible Control Panel - Top Left */}
       <div style={{
         position: 'absolute',
-        top: '1rem',
+        top: alerts.length > 0 ? 'calc(1rem + ' + (alerts.length * 80) + 'px)' : '1rem',
         left: '1rem',
         zIndex: 1000,
         display: 'flex',
@@ -989,6 +1267,29 @@ const ShipMapWithZones = () => {
                 }}
               >
                 Reset
+              </button>
+            </div>
+
+            {/* Simulation Speed Control */}
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <Gauge size={16} style={{ marginRight: '0.5rem' }} />
+                <span style={{ fontSize: '0.875rem', fontWeight: '500' }}>Simulation Speed</span>
+              </div>
+              <button
+                onClick={changeSimulationSpeed}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#17a2b8',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  width: '100%'
+                }}
+              >
+                {simulationSpeed}x Speed
               </button>
             </div>
 
@@ -1231,7 +1532,7 @@ const ShipMapWithZones = () => {
       {/* Vessel List Toggle Button - Top Right */}
       <div style={{
         position: 'absolute',
-        top: '1rem',
+        top: alerts.length > 0 ? 'calc(1rem + ' + (alerts.length * 80) + 'px)' : '1rem',
         right: '1rem',
         zIndex: 1000
       }}>
@@ -1305,7 +1606,8 @@ const ShipMapWithZones = () => {
       {/* Environmental Zones Info Toggle Button - Right Side */}
       <div style={{
         position: 'absolute',
-        top: showVesselList ? 'calc(1rem + 50px + 300px)' : 'calc(1rem + 50px)',
+        top: showVesselList ? 'calc(' + (alerts.length > 0 ? '1rem + ' + (alerts.length * 80) + 'px + 50px + 300px' : '1rem + 50px + 300px') + ')' : 
+              (alerts.length > 0 ? 'calc(1rem + ' + (alerts.length * 80) + 'px + 50px)' : 'calc(1rem + 50px)'),
         right: '1rem',
         zIndex: 1000
       }}>
@@ -1404,6 +1706,21 @@ const ShipMapWithZones = () => {
           borderRadius: isFullscreen ? '0' : '12px'
         }}
       />
+
+      {/* Add CSS for alert animation */}
+      <style>
+        {`
+          @keyframes slideIn {
+            from { transform: translateY(-100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+          @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+          }
+        `}
+      </style>
     </div>
   );
 };
