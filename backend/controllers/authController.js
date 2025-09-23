@@ -10,6 +10,7 @@ function signToken(user) {
    );
    }
 
+   
    export const  register = async (req, res, next) => {
     try{
         const errors = validationResult(req);
@@ -52,4 +53,40 @@ export const login = async (req, res, next) => {
 export const getProfile = async (req, res) => {
     res.json({ user: req.user });
 
+};
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(400).json({ errors: errors.array() });
+
+    const { name, password, vesselName, vesselType } = req.body;
+
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // update only provided fields
+    if (name) user.name = name;
+    if (vesselName) user.vesselName = vesselName;
+    if (vesselType) user.vesselType = vesselType;
+    if (password) user.password = password; 
+
+    await user.save();
+
+    res.json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+  export const deleteProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByIdAndDelete(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ message: "Profile deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
 };
