@@ -47,7 +47,7 @@ const Register = () => {
     try {
       await registerUser(data);
       toast.success('Registration successful!');
-      navigate('/login');
+      navigate('/home'); // 👈 redirect to Home.js
     } catch (error) {
       const message = error.response?.data?.message || 'Registration failed';
       toast.error(message);
