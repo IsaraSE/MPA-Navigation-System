@@ -28,6 +28,7 @@ const Login = () => {
       await login(data);
       toast.success('Login successful!');
       // Stay on login page or redirect to a different page if needed
+      navigate('/home'); // 👈 redirect to Home.js
     } catch (error) {
       const message = error.response?.data?.message || 'Login failed';
       toast.error(message);
