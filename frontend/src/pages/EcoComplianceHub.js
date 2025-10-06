@@ -22,13 +22,15 @@ import {
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
-// Local images assumed to be in public/assets/images or imported directly
-// e.g. import nav3 from '../../assets/images/nav3.jpg'
-
 const EcoComplianceHub = () => {
   const [activeSection, setActiveSection] = useState('education');
   const [headerOpacity, setHeaderOpacity] = useState(1);
   const navigate = useNavigate();
+
+  const handleTopicClick = (topic) => {
+    // Fixed navigation: pass topicId to TopicDetail
+    navigate('/topic-detail', { state: { topicId: topic.id } });
+  };
 
   useEffect(() => {
     const onScroll = () => {
@@ -53,7 +55,7 @@ const EcoComplianceHub = () => {
         gradient: ['#10b981', '#059669'],
         description: 'Learn about different types of MPAs, their boundaries, and protection levels.',
         readTime: '5 min read',
-        image: '/assets/images/nav5.jpg',
+        image: '/mpa.jpg',
       },
       {
         id: 2,
@@ -64,18 +66,18 @@ const EcoComplianceHub = () => {
         gradient: ['#3b82f6', '#1d4ed8'],
         description: 'Discover endangered species, migration patterns, and conservation efforts.',
         readTime: '7 min read',
-        image: '/assets/images/nav4.jpg',
+        image: '/wild.jpg',
       },
       {
         id: 3,
         title: 'Sustainable Fishing Practices',
         subtitle: 'Responsible fishing guidelines',
         icon: Anchor,
-        color: '#f59e0b',
-        gradient: ['#f59e0b', '#d97706'],
+        color: '#f5e90bff',
+        gradient: ['#d6f50bff', '#d9d206ff'],
         description: 'Best practices for sustainable fishing and marine resource management.',
         readTime: '6 min read',
-        image: '/assets/images/nav3.jpg',
+        image: '/fishing.jpg',
       },
       {
         id: 4,
@@ -86,7 +88,7 @@ const EcoComplianceHub = () => {
         gradient: ['#06b6d4', '#0891b2'],
         description: 'Understanding pollution sources and prevention strategies.',
         readTime: '4 min read',
-        image: '/assets/images/nav4.jpg',
+        image: '/nav4.jpg',
       },
       {
         id: 5,
@@ -97,7 +99,7 @@ const EcoComplianceHub = () => {
         gradient: ['#8b5cf6', '#7c3aed'],
         description: 'International and local regulations for marine conservation.',
         readTime: '8 min read',
-        image: '/assets/images/nav5.jpg',
+        image: '/anchor.jpg',
       },
       {
         id: 6,
@@ -108,7 +110,7 @@ const EcoComplianceHub = () => {
         gradient: ['#ef4444', '#dc2626'],
         description: 'How climate change affects marine ecosystems and biodiversity.',
         readTime: '9 min read',
-        image: '/assets/images/nav6.jpg',
+        image: '/nav6.jpg',
       },
     ],
     []
@@ -124,24 +126,10 @@ const EcoComplianceHub = () => {
     []
   );
 
-  // const handleTopicClick = (topic) => {
-  //   navigate(`/topics/${topic.id}`, { state: { topic } });
-  // };
+  const handleQuickAction = (action) => {
+    console.log('Quick action:', action);
+  };
 
-  // const handleQuickAction = (action) => {
-  //   console.log('Quick action:', action);
-  //   if (action === 'maps') navigate('/maps');
-  //   if (action === 'videos') navigate('/videos');
-  //   if (action === 'quiz') navigate('/quiz');
-  //   if (action === 'report') navigate('/report');
-  // };
-const handleTopicClick = (topic) => {
-  console.log('Clicked topic:', topic.title);
-};
-
-const handleQuickAction = (action) => {
-  console.log('Quick action:', action);
-};
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800">
       <div
@@ -277,9 +265,8 @@ const handleQuickAction = (action) => {
             </button>
           </div>
         </section>
-
-        <Footer />
       </main>
+      <Footer />
     </div>
   );
 };
