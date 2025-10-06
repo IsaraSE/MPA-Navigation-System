@@ -1,5 +1,51 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin, Plus, X, Save, Trash2, Target, Anchor, Flame, Zap, AlertCircle } from 'lucide-react';
+
+// Hotspot categories configuration
+const HOTSPOT_CATEGORIES = {
+  INCIDENT: {
+    name: 'Incident',
+    color: '#dc3545',
+    icon: '⚠️',
+    description: 'Accident or emergency location'
+  },
+  HAZARD: {
+    name: 'Navigation Hazard',
+    color: '#fd7e14',
+    icon: '⚡',
+    description: 'Dangerous navigation area'
+  },
+  ANCHORAGE: {
+    name: 'Anchorage Point',
+    color: '#17a2b8',
+    icon: '⚓',
+    description: 'Safe anchorage location'
+  },
+  WILDLIFE: {
+    name: 'Wildlife Area',
+    color: '#28a745',
+    icon: '🐋',
+    description: 'Marine wildlife concentration'
+  },
+  WEATHER: {
+    name: 'Weather Event',
+    color: '#6f42c1',
+    icon: '🌪️',
+    description: 'Severe weather location'
+  },
+  FISHING: {
+    name: 'Fishing Ground',
+    color: '#20c997',
+    icon: '🎣',
+    description: 'Active fishing area'
+  },
+  CUSTOM: {
+    name: 'Custom Point',
+    color: '#6c757d',
+    icon: '📍',
+    description: 'User-defined location'
+  }
+};
 
 const ShipMapWithZones = () => {
   const mapRef = useRef(null);
@@ -17,11 +63,33 @@ const ShipMapWithZones = () => {
   const [showZoneInfo, setShowZoneInfo] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [currentZoom, setCurrentZoom] = useState(2);
+  
+  // Hotspot marking states
+  const [hotspots, setHotspots] = useState([]);
+  const [isMarkingMode, setIsMarkingMode] = useState(false);
+  const [showHotspotForm, setShowHotspotForm] = useState(false);
+  const [pendingHotspot, setPendingHotspot] = useState(null);
+  const [showHotspots, setShowHotspots] = useState(true);
+  const [showHotspotList, setShowHotspotList] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('INCIDENT');
+  const [hotspotFormData, setHotspotFormData] = useState({
+    name: '',
+    description: '',
+    category: 'INCIDENT',
+    severity: 'medium',
+    radius: 5000 // Default 5km radius in meters
+  });
+  const [customRadius, setCustomRadius] = useState(5); // Default 5km for UI display
+
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const zonesLayerRef = useRef(null);
   const zoneIconsLayerRef = useRef(null);
+  const hotspotsLayerRef = useRef(null);
+  const tempCircleRef = useRef(null);
+  const mapClickHandlerRef = useRef(null);
+  const isMarkingModeRef = useRef(false);
 
   // Enhanced error handling for Leaflet loading
   useEffect(() => {
@@ -103,8 +171,8 @@ const ShipMapWithZones = () => {
         id: 'great_barrier_reef',
         name: 'Great Barrier Reef Marine Park',
         type: 'marine_protected_area',
-        center: [-16.0, 145.8], // Corrected to be in water near Queensland coast
-        radius: 200000, // 200km radius in meters
+        center: [-16.0, 145.8],
+        radius: 200000,
         description: 'World Heritage marine protected area',
         restrictions: 'No anchoring, speed restrictions, waste discharge prohibited',
         authority: 'Great Barrier Reef Marine Park Authority',
@@ -115,7 +183,7 @@ const ShipMapWithZones = () => {
         name: 'Monterey Bay National Marine Sanctuary',
         type: 'national_marine_sanctuary',
         center: [36.25, -121.75],
-        radius: 75000, // 75km radius
+        radius: 75000,
         description: 'Critical habitat for marine mammals and seabirds',
         restrictions: 'Speed restrictions for whale protection, no dumping',
         authority: 'NOAA',
@@ -126,7 +194,7 @@ const ShipMapWithZones = () => {
         name: 'Wadden Sea World Heritage Site',
         type: 'world_heritage_site',
         center: [54.15, 7.25],
-        radius: 120000, // 120km radius
+        radius: 120000,
         description: 'Tidal flat ecosystem, critical for migratory birds',
         restrictions: 'Seasonal navigation restrictions, draft limitations',
         authority: 'Trilateral Wadden Sea Cooperation',
@@ -136,8 +204,8 @@ const ShipMapWithZones = () => {
         id: 'galapagos_marine_reserve',
         name: 'Galápagos Marine Reserve',
         type: 'marine_reserve',
-        center: [-0.5, -90.0], // Adjusted to be more in water
-        radius: 150000, // 150km radius
+        center: [-0.5, -90.0],
+        radius: 150000,
         description: 'Unique ecosystem with endemic species',
         restrictions: 'Restricted access, authorized vessels only',
         authority: 'Galápagos National Park Service',
@@ -148,66 +216,11 @@ const ShipMapWithZones = () => {
         name: 'Antarctic Specially Protected Area',
         type: 'specially_protected_area',
         center: [-62.5, -60.0],
-        radius: 180000, // 180km radius
+        radius: 180000,
         description: 'Pristine Antarctic marine environment',
         restrictions: 'Permit required, environmental impact assessment',
         authority: 'Antarctic Treaty System',
         severity: 'critical'
-      },
-      {
-        id: 'north_sea_natura2000',
-        name: 'North Sea Natura 2000 Sites',
-        type: 'natura2000',
-        center: [55.0, 5.0],
-        radius: 100000, // 100km radius
-        description: 'European network of protected marine areas',
-        restrictions: 'Seasonal fishing restrictions, seabird protection',
-        authority: 'European Union',
-        severity: 'medium'
-      },
-      {
-        id: 'coral_triangle',
-        name: 'Coral Triangle Marine Protected Area',
-        type: 'marine_biodiversity_hotspot',
-        center: [0.0, 122.5],
-        radius: 250000, // 250km radius
-        description: 'Global center of marine biodiversity',
-        restrictions: 'Coral protection measures, anchor restrictions',
-        authority: 'Coral Triangle Initiative',
-        severity: 'high'
-      },
-      {
-        id: 'mediterranean_spami',
-        name: 'Mediterranean SPAMI Network',
-        type: 'specially_protected_area',
-        center: [39.0, 7.5],
-        radius: 80000, // 80km radius
-        description: 'Specially Protected Areas of Mediterranean Importance',
-        restrictions: 'Habitat protection, fishing regulations',
-        authority: 'UNEP-MAP',
-        severity: 'medium'
-      },
-      {
-        id: 'bering_sea_protected',
-        name: 'Bering Sea Marine Protected Area',
-        type: 'marine_protected_area',
-        center: [60.0, -175.0],
-        radius: 90000, // 90km radius
-        description: 'Critical Arctic marine ecosystem',
-        restrictions: 'Ice navigation protocols, wildlife protection',
-        authority: 'NOAA Fisheries',
-        severity: 'high'
-      },
-      {
-        id: 'gulf_stream_sanctuary',
-        name: 'Gulf Stream Marine Sanctuary',
-        type: 'marine_sanctuary',
-        center: [35.0, -75.0],
-        radius: 60000, // 60km radius
-        description: 'Important oceanic current system',
-        restrictions: 'Current-sensitive navigation, protected species zones',
-        authority: 'US Marine Sanctuary Program',
-        severity: 'medium'
       }
     ];
   };
@@ -252,9 +265,18 @@ const ShipMapWithZones = () => {
         updateZoneDisplay(zoom);
       });
 
+      // Add click listener for hotspot marking
+      const clickHandler = (e) => {
+        handleMapClick(e);
+      };
+      
+      mapInstance.current.on('click', clickHandler);
+      mapClickHandlerRef.current = clickHandler;
+
       setMapInitialized(true);
       initializeVessels();
       loadSensitiveZones();
+      initializeHotspotsLayer();
 
     } catch (error) {
       console.error('Map initialization error:', error);
@@ -262,16 +284,406 @@ const ShipMapWithZones = () => {
     }
   };
 
+  // Handle map clicks for hotspot marking
+  const handleMapClick = (e) => {
+    if (!isMarkingModeRef.current) {
+      return;
+    }
+    
+    try {
+      e.originalEvent?.preventDefault();
+      e.originalEvent?.stopPropagation();
+
+      const { lat, lng } = e.latlng;
+      
+      // Remove any existing temporary circle
+      if (tempCircleRef.current && mapInstance.current) {
+        mapInstance.current.removeLayer(tempCircleRef.current);
+        tempCircleRef.current = null;
+      }
+
+      // Create a temporary circle to show the selected area
+      if (window.L && mapInstance.current) {
+        const L = window.L;
+        const radiusInMeters = customRadius * 1000;
+        
+        tempCircleRef.current = L.circle([lat, lng], {
+          radius: radiusInMeters,
+          color: '#007bff',
+          fillColor: '#007bff',
+          weight: 3,
+          opacity: 0.8,
+          fillOpacity: 0.2,
+          dashArray: '10,5'
+        }).addTo(mapInstance.current);
+
+        // Add pulsing effect
+        setTimeout(() => {
+          if (tempCircleRef.current) {
+            tempCircleRef.current.setStyle({
+              opacity: 0.6,
+              fillOpacity: 0.1
+            });
+          }
+        }, 200);
+
+        // Zoom to fit the circle if it's large
+        if (customRadius > 20) {
+          const bounds = tempCircleRef.current.getBounds();
+          mapInstance.current.fitBounds(bounds, { padding: [20, 20] });
+        }
+      }
+
+      setPendingHotspot({ lat, lng });
+      setHotspotFormData(prev => ({ ...prev, radius: customRadius * 1000 }));
+      setShowHotspotForm(true);
+      setIsMarkingMode(false);
+      isMarkingModeRef.current = false;
+      
+      // Update the map cursor back to normal
+      if (mapInstance.current) {
+        mapInstance.current.getContainer().style.cursor = '';
+      }
+    } catch (error) {
+      console.error('Error in handleMapClick:', error);
+    }
+  };
+
+  // Update circle radius in real-time
+  const updateTempCircleRadius = (newRadius) => {
+    if (tempCircleRef.current && mapInstance.current && window.L) {
+      try {
+        const radiusInMeters = newRadius * 1000;
+        
+        // Remove the old circle and create a new one with correct radius
+        const center = tempCircleRef.current.getLatLng();
+        mapInstance.current.removeLayer(tempCircleRef.current);
+        
+        const L = window.L;
+        tempCircleRef.current = L.circle(center, {
+          radius: radiusInMeters,
+          color: '#007bff',
+          fillColor: '#007bff',
+          weight: 3,
+          opacity: 0.8,
+          fillOpacity: 0.2,
+          dashArray: '10,5'
+        }).addTo(mapInstance.current);
+        
+        // Add pulsing effect
+        setTimeout(() => {
+          if (tempCircleRef.current) {
+            tempCircleRef.current.setStyle({
+              opacity: 0.6,
+              fillOpacity: 0.1
+            });
+          }
+        }, 200);
+        
+      } catch (error) {
+        console.error('Error updating circle radius:', error);
+      }
+    }
+  };
+
+  // Update radius and circle when slider changes
+  const handleRadiusChange = (newRadius) => {
+    setCustomRadius(newRadius);
+    updateTempCircleRadius(newRadius);
+    
+    // Also update the form data if form is open
+    if (showHotspotForm) {
+      setHotspotFormData(prev => ({ ...prev, radius: newRadius * 1000 }));
+    }
+  };
+
+  // Toggle marking mode
+  const toggleMarkingMode = () => {
+    const newMarkingMode = !isMarkingMode;
+    
+    setIsMarkingMode(newMarkingMode);
+    isMarkingModeRef.current = newMarkingMode;
+    
+    if (mapInstance.current) {
+      const container = mapInstance.current.getContainer();
+      if (newMarkingMode) {
+        container.style.cursor = 'crosshair';
+        
+        // Show instruction tooltip
+        const tooltip = document.createElement('div');
+        tooltip.id = 'marking-tooltip';
+        tooltip.innerHTML = `🎯 Click anywhere on the map to mark hotspot (${customRadius}km radius)`;
+        tooltip.style.cssText = `
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0,123,255,0.9);
+          color: white;
+          padding: 12px 20px;
+          border-radius: 6px;
+          font-size: 14px;
+          font-weight: bold;
+          pointer-events: none;
+          z-index: 1001;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          animation: fadeInScale 0.3s ease-out;
+        `;
+        
+        // Add animation keyframes
+        if (!document.getElementById('tooltip-animations')) {
+          const style = document.createElement('style');
+          style.id = 'tooltip-animations';
+          style.textContent = `
+            @keyframes fadeInScale {
+              from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+              }
+              to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+              }
+            }
+          `;
+          document.head.appendChild(style);
+        }
+        
+        container.appendChild(tooltip);
+        
+        // Remove tooltip after 4 seconds
+        setTimeout(() => {
+          const tooltipEl = document.getElementById('marking-tooltip');
+          if (tooltipEl) {
+            tooltipEl.style.animation = 'fadeInScale 0.3s ease-out reverse';
+            setTimeout(() => tooltipEl.remove(), 300);
+          }
+        }, 4000);
+      } else {
+        container.style.cursor = '';
+        
+        // Remove any existing tooltip
+        const tooltipEl = document.getElementById('marking-tooltip');
+        if (tooltipEl) tooltipEl.remove();
+        
+        // Remove temporary circle if marking is cancelled
+        if (tempCircleRef.current) {
+          mapInstance.current.removeLayer(tempCircleRef.current);
+          tempCircleRef.current = null;
+        }
+      }
+    }
+  };
+
+  // Update ref when state changes
+  React.useEffect(() => {
+    isMarkingModeRef.current = isMarkingMode;
+  }, [isMarkingMode]);
+
+  // Initialize hotspots layer
+  const initializeHotspotsLayer = () => {
+    if (!mapInstance.current || !window.L) return;
+
+    const L = window.L;
+    hotspotsLayerRef.current = L.layerGroup().addTo(mapInstance.current);
+  };
+
+  // Create hotspot icon
+  const createHotspotIcon = (category, severity = 'medium') => {
+    if (!window.L) return null;
+
+    const config = HOTSPOT_CATEGORIES[category];
+    const sizeMultiplier = severity === 'critical' ? 1.2 : severity === 'high' ? 1.1 : 1;
+    const size = 32 * sizeMultiplier;
+
+    return window.L.divIcon({
+      className: 'hotspot-marker',
+      html: `
+        <div style="
+          background: ${config.color};
+          border: 3px solid white;
+          border-radius: 50%;
+          width: ${size}px;
+          height: ${size}px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: ${size * 0.4}px;
+          box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+          cursor: pointer;
+          ${severity === 'critical' ? 'animation: pulse 2s infinite;' : ''}
+        ">
+          ${config.icon}
+        </div>
+        <style>
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 ${config.color}40; }
+            70% { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+          }
+        </style>
+      `,
+      iconSize: [size, size],
+      iconAnchor: [size/2, size/2]
+    });
+  };
+
+  // Add hotspot to map
+  const addHotspotToMap = (hotspot) => {
+    if (!hotspotsLayerRef.current || !window.L) return;
+
+    const L = window.L;
+    const icon = createHotspotIcon(hotspot.category, hotspot.severity);
+    
+    const marker = L.marker([hotspot.lat, hotspot.lng], { icon })
+      .addTo(hotspotsLayerRef.current);
+
+    // Add area circle if radius is specified
+    if (hotspot.radius) {
+      const areaCircle = L.circle([hotspot.lat, hotspot.lng], {
+        radius: hotspot.radius,
+        color: HOTSPOT_CATEGORIES[hotspot.category].color,
+        fillColor: HOTSPOT_CATEGORIES[hotspot.category].color,
+        weight: 2,
+        opacity: 0.6,
+        fillOpacity: 0.1,
+        dashArray: '5,5'
+      }).addTo(hotspotsLayerRef.current);
+    }
+
+    const radiusKm = hotspot.radius ? (hotspot.radius / 1000).toFixed(1) : 'N/A';
+    const popupContent = `
+      <div style="font-family: Arial, sans-serif; min-width: 250px;">
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+          <span style="font-size: 20px; margin-right: 8px;">${HOTSPOT_CATEGORIES[hotspot.category].icon}</span>
+          <h3 style="margin: 0; color: #2c3e50;">${hotspot.name}</h3>
+        </div>
+        <p><strong>Category:</strong> ${HOTSPOT_CATEGORIES[hotspot.category].name}</p>
+        <p><strong>Severity:</strong> <span style="color: ${getSeverityColor(hotspot.severity)}; text-transform: capitalize;">${hotspot.severity}</span></p>
+        <p><strong>Area Radius:</strong> ${radiusKm} km</p>
+        <p><strong>Description:</strong> ${hotspot.description || 'No description provided'}</p>
+        <p><strong>Location:</strong> ${hotspot.lat.toFixed(4)}°, ${hotspot.lng.toFixed(4)}°</p>
+        <p><strong>Created:</strong> ${new Date(hotspot.timestamp).toLocaleDateString()}</p>
+        <div style="margin-top: 10px;">
+          <button onclick="deleteHotspot('${hotspot.id}')" style="
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+          ">Delete</button>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupContent);
+    return marker;
+  };
+
+  // Helper function to get severity color
+  const getSeverityColor = (severity) => {
+    const severityConfig = {
+      critical: '#dc3545',
+      high: '#fd7e14',
+      medium: '#ffc107',
+      low: '#28a745'
+    };
+    return severityConfig[severity] || severityConfig.medium;
+  };
+
+  // Save hotspot
+  const saveHotspot = () => {
+    if (!pendingHotspot || !hotspotFormData.name.trim()) return;
+
+    const newHotspot = {
+      id: `hotspot-${Date.now()}`,
+      name: hotspotFormData.name.trim(),
+      description: hotspotFormData.description.trim(),
+      category: hotspotFormData.category,
+      severity: hotspotFormData.severity,
+      lat: pendingHotspot.lat,
+      lng: pendingHotspot.lng,
+      radius: hotspotFormData.radius,
+      timestamp: Date.now()
+    };
+
+    setHotspots(prev => [...prev, newHotspot]);
+    addHotspotToMap(newHotspot);
+    
+    // Remove temporary circle
+    if (tempCircleRef.current && mapInstance.current) {
+      mapInstance.current.removeLayer(tempCircleRef.current);
+      tempCircleRef.current = null;
+    }
+    
+    // Reset form
+    setShowHotspotForm(false);
+    setPendingHotspot(null);
+    setHotspotFormData({
+      name: '',
+      description: '',
+      category: 'INCIDENT',
+      severity: 'medium',
+      radius: customRadius * 1000
+    });
+  };
+
+  // Cancel hotspot creation
+  const cancelHotspotCreation = () => {
+    // Remove temporary circle
+    if (tempCircleRef.current && mapInstance.current) {
+      mapInstance.current.removeLayer(tempCircleRef.current);
+      tempCircleRef.current = null;
+    }
+    
+    setShowHotspotForm(false);
+    setPendingHotspot(null);
+    setHotspotFormData({
+      name: '',
+      description: '',
+      category: 'INCIDENT',
+      severity: 'medium',
+      radius: customRadius * 1000
+    });
+  };
+
+  // Delete hotspot
+  useEffect(() => {
+    window.deleteHotspot = (hotspotId) => {
+      setHotspots(prev => prev.filter(h => h.id !== hotspotId));
+      
+      // Remove from map
+      if (hotspotsLayerRef.current) {
+        hotspotsLayerRef.current.eachLayer(layer => {
+          if (layer.getPopup() && layer.getPopup().getContent().includes(hotspotId)) {
+            hotspotsLayerRef.current.removeLayer(layer);
+          }
+        });
+      }
+    };
+  }, []);
+
+  // Toggle hotspots visibility
+  const toggleHotspotsVisibility = () => {
+    if (!mapInstance.current || !hotspotsLayerRef.current) return;
+
+    if (showHotspots) {
+      mapInstance.current.removeLayer(hotspotsLayerRef.current);
+    } else {
+      hotspotsLayerRef.current.addTo(mapInstance.current);
+    }
+    setShowHotspots(!showHotspots);
+  };
+
   // Load sensitive zones
   const loadSensitiveZones = async () => {
     try {
       setLoadingZones(true);
-      
-      // For now, using fallback data with corrected coordinates
       const zones = getFallbackSensitiveZones();
       setSensitiveZones(zones);
       addSensitiveZonesToMap(zones);
-      
     } catch (error) {
       console.error('Error loading sensitive zones:', error);
       setSensitiveZones(getFallbackSensitiveZones());
@@ -885,7 +1297,7 @@ const ShipMapWithZones = () => {
       position: isFullscreen ? 'fixed' : 'relative', 
       top: isFullscreen ? 0 : 'auto',
       left: isFullscreen ? 0 : 'auto',
-      height: isFullscreen ? '100vh' : '500px', 
+      height: isFullscreen ? '100vh' : '600px', 
       width: isFullscreen ? '100vw' : '100%',
       zIndex: isFullscreen ? 9999 : 'auto',
       backgroundColor: isFullscreen ? '#000' : 'transparent'
@@ -907,7 +1319,7 @@ const ShipMapWithZones = () => {
         }}>
           <div style={{ textAlign: 'center' }}>
             <Waves size={32} style={{ marginBottom: '1rem', animation: 'pulse 2s infinite' }} />
-            <div>Loading Maritime Map with Smart Zone Display...</div>
+            <div>Loading Maritime Map with Smart Zone Display & Hotspot Marking...</div>
           </div>
         </div>
       )}
@@ -950,7 +1362,7 @@ const ShipMapWithZones = () => {
             padding: '1rem',
             borderRadius: '8px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            minWidth: '220px'
+            minWidth: '250px'
           }}>
             <h4 style={{ margin: '0 0 1rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
               <Navigation size={18} style={{ marginRight: '0.5rem' }} />
@@ -995,7 +1407,7 @@ const ShipMapWithZones = () => {
             <div style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '1rem' }}>
               <div>Vessels: {vessels.length}</div>
               <div style={{ color: isSimulating ? '#28a745' : '#dc3545' }}>
-                {isSimulating ? 'Active' : 'Paused'}
+                {isSimulating ? 'Live Tracking' : 'Paused'}
               </div>
               <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
                 Zoom: {currentZoom} • {currentZoom >= 5 ? 'Detailed View' : 'Overview'}
@@ -1003,7 +1415,7 @@ const ShipMapWithZones = () => {
             </div>
 
             {/* Environmental Zones Control */}
-            <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem' }}>
+            <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem', marginBottom: '1rem' }}>
               <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
                 <Shield size={16} style={{ marginRight: '0.5rem' }} />
                 Smart Zone Display
@@ -1034,6 +1446,108 @@ const ShipMapWithZones = () => {
               <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
                 {sensitiveZones.length} zones loaded<br/>
                 {currentZoom >= 5 ? 'Showing circles' : 'Showing icons'}
+              </div>
+            </div>
+
+            {/* Hotspot Controls */}
+            <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem' }}>
+              <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+                <Target size={16} style={{ marginRight: '0.5rem' }} />
+                Hotspot Marking
+              </h5>
+              
+              {/* Radius Control */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                  Area Radius: {customRadius} km
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  step="0.5"
+                  value={customRadius}
+                  onChange={(e) => {
+                    const newRadius = parseFloat(e.target.value);
+                    handleRadiusChange(newRadius);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '6px',
+                    borderRadius: '3px',
+                    background: `linear-gradient(to right, #007bff 0%, #007bff ${(customRadius-1)/49*100}%, #ddd ${(customRadius-1)/49*100}%, #ddd 100%)`,
+                    outline: 'none',
+                    appearance: 'none'
+                  }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                  <span>1 km</span>
+                  <span>50 km</span>
+                </div>
+                
+                {/* Quick preset buttons */}
+                <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem' }}>
+                  {[1, 5, 10, 25].map(preset => (
+                    <button
+                      key={preset}
+                      onClick={() => handleRadiusChange(preset)}
+                      style={{
+                        background: customRadius === preset ? '#007bff' : '#f8f9fa',
+                        color: customRadius === preset ? 'white' : '#6c757d',
+                        border: '1px solid #dee2e6',
+                        padding: '0.2rem 0.4rem',
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem'
+                      }}
+                    >
+                      {preset}km
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={toggleMarkingMode}
+                  disabled={!mapInitialized}
+                  style={{
+                    background: isMarkingMode ? '#fd7e14' : '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '4px',
+                    cursor: mapInitialized ? 'pointer' : 'not-allowed',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    flex: 1
+                  }}
+                >
+                  <Plus size={14} style={{ marginRight: '4px' }} />
+                  {isMarkingMode ? 'Cancel' : 'Mark Hotspot'}
+                </button>
+                
+                <button
+                  onClick={toggleHotspotsVisibility}
+                  style={{
+                    background: showHotspots ? '#28a745' : '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.4rem 0.8rem',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  {showHotspots ? <Eye size={14} /> : <EyeOff size={14} />}
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                {isMarkingMode ? `🎯 Click map to mark ${customRadius}km hotspot` : `${hotspots.length} hotspots marked`}
               </div>
             </div>
           </div>
@@ -1130,6 +1644,126 @@ const ShipMapWithZones = () => {
           </div>
           <div style={{ fontSize: '0.65rem', color: '#6c757d', marginTop: '0.5rem', fontStyle: 'italic' }}>
             {currentZoom >= 5 ? 'Click circles for info' : 'Click icons for details'}
+          </div>
+        </div>
+      )}
+
+      {/* Hotspot List Panel */}
+      {hotspots.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          bottom: '1rem',
+          left: sensitiveZones.length > 0 ? 'calc(1rem + 250px)' : '1rem',
+          zIndex: 1000,
+          background: 'rgba(255,255,255,0.95)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          minWidth: '300px',
+          maxHeight: '300px'
+        }}>
+          <button
+            onClick={() => setShowHotspotList(!showHotspotList)}
+            style={{
+              width: '100%',
+              background: 'none',
+              border: 'none',
+              padding: '0.75rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontWeight: 'bold',
+              fontSize: '0.875rem'
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center' }}>
+              <Target size={16} style={{ marginRight: '8px' }} />
+              Hotspots ({hotspots.length})
+            </span>
+            {showHotspotList ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+
+          {showHotspotList && (
+            <div style={{
+              maxHeight: '220px',
+              overflowY: 'auto',
+              borderTop: '1px solid #eee'
+            }}>
+              {hotspots.map(hotspot => (
+                <div
+                  key={hotspot.id}
+                  style={{
+                    padding: '0.75rem',
+                    borderBottom: '1px solid #f0f0f0',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    if (mapInstance.current) {
+                      mapInstance.current.setView([hotspot.lat, hotspot.lng], 8);
+                    }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.25rem' }}>
+                    <span style={{ marginRight: '8px' }}>{HOTSPOT_CATEGORIES[hotspot.category].icon}</span>
+                    <strong style={{ fontSize: '0.875rem' }}>{hotspot.name}</strong>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                    {HOTSPOT_CATEGORIES[hotspot.category].name} • {hotspot.severity}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Hotspot Category Legend - Top Center */}
+      {showHotspots && hotspots.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '1rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(255,255,255,0.95)',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 1000,
+          padding: '0.75rem',
+          minWidth: '300px'
+        }}>
+          <h5 style={{ margin: '0 0 0.5rem 0', textAlign: 'center', fontSize: '0.875rem' }}>
+            Hotspot Categories
+          </h5>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+            gap: '0.5rem',
+            fontSize: '0.7rem'
+          }}>
+            {Object.entries(HOTSPOT_CATEGORIES).map(([key, config]) => {
+              const count = hotspots.filter(h => h.category === key).length;
+              if (count === 0) return null;
+              
+              return (
+                <div
+                  key={key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    background: `${config.color}15`,
+                    border: `1px solid ${config.color}30`
+                  }}
+                >
+                  <span style={{ marginRight: '6px', fontSize: '0.8rem' }}>{config.icon}</span>
+                  <span style={{ fontSize: '0.65rem' }}>
+                    {config.name.split(' ')[0]} ({count})
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1394,14 +2028,290 @@ const ShipMapWithZones = () => {
         )}
       </div>
 
-      {/* Map container */}
+      {/* Hotspot Form Modal */}
+      {showHotspotForm && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 2000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            minWidth: '400px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+          }}>
+            <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center' }}>
+              <Target size={20} style={{ marginRight: '8px' }} />
+              Mark Hotspot
+            </h3>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                Name *
+              </label>
+              <input
+                type="text"
+                value={hotspotFormData.name}
+                onChange={(e) => setHotspotFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter hotspot name"
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                Category
+              </label>
+              <select
+                value={hotspotFormData.category}
+                onChange={(e) => setHotspotFormData(prev => ({ ...prev, category: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem'
+                }}
+              >
+                {Object.entries(HOTSPOT_CATEGORIES).map(([key, config]) => (
+                  <option key={key} value={key}>
+                    {config.icon} {config.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                Area Radius
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input
+                  type="range"
+                  min="1"
+                  max="50"
+                  step="0.5"
+                  value={hotspotFormData.radius / 1000}
+                  onChange={(e) => {
+                    const newRadiusKm = parseFloat(e.target.value);
+                    const newRadiusM = newRadiusKm * 1000;
+                    setHotspotFormData(prev => ({ ...prev, radius: newRadiusM }));
+                    setCustomRadius(newRadiusKm);
+                    updateTempCircleRadius(newRadiusKm);
+                  }}
+                  style={{
+                    flex: 1,
+                    height: '8px',
+                    borderRadius: '4px',
+                    background: `linear-gradient(to right, #007bff 0%, #007bff ${((hotspotFormData.radius/1000)-1)/49*100}%, #ddd ${((hotspotFormData.radius/1000)-1)/49*100}%, #ddd 100%)`,
+                    outline: 'none',
+                    appearance: 'none',
+                    cursor: 'pointer'
+                  }}
+                />
+                <div style={{ 
+                  minWidth: '70px', 
+                  textAlign: 'center',
+                  fontWeight: 'bold',
+                  color: '#007bff',
+                  background: '#f0f8ff',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '4px',
+                  border: '1px solid #007bff'
+                }}>
+                  {(hotspotFormData.radius / 1000).toFixed(1)} km
+                </div>
+              </div>
+              
+              <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.5rem' }}>
+                Drag slider or click presets to adjust area size
+              </div>
+              
+              <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                {[1, 2.5, 5, 10, 15, 25, 35, 50].map(preset => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      const newRadiusM = preset * 1000;
+                      setHotspotFormData(prev => ({ ...prev, radius: newRadiusM }));
+                      setCustomRadius(preset);
+                      updateTempCircleRadius(preset);
+                    }}
+                    style={{
+                      background: Math.abs(hotspotFormData.radius/1000 - preset) < 0.1 ? '#007bff' : '#f8f9fa',
+                      color: Math.abs(hotspotFormData.radius/1000 - preset) < 0.1 ? 'white' : '#6c757d',
+                      border: '1px solid #dee2e6',
+                      padding: '0.3rem 0.6rem',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {preset}km
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                Severity Level
+              </label>
+              <select
+                value={hotspotFormData.severity}
+                onChange={(e) => setHotspotFormData(prev => ({ ...prev, severity: e.target.value }))}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem'
+                }}
+              >
+                <option value="low">🟢 Low Priority</option>
+                <option value="medium">🟡 Medium Priority</option>
+                <option value="high">🟠 High Priority</option>
+                <option value="critical">🔴 Critical Priority</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+                Description
+              </label>
+              <textarea
+                value={hotspotFormData.description}
+                onChange={(e) => setHotspotFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Optional description..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '0.9rem',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            <div style={{ 
+              background: '#f8f9fa',
+              padding: '0.75rem',
+              borderRadius: '4px',
+              marginBottom: '1.5rem',
+              fontSize: '0.85rem'
+            }}>
+              <strong>Location:</strong> {pendingHotspot?.lat.toFixed(4)}°, {pendingHotspot?.lng.toFixed(4)}°<br/>
+              <strong>Area Radius:</strong> {(hotspotFormData.radius / 1000).toFixed(1)} km
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={cancelHotspotCreation}
+                style={{
+                  background: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <X size={16} style={{ marginRight: '4px' }} />
+                Cancel
+              </button>
+              
+              <button
+                onClick={saveHotspot}
+                disabled={!hotspotFormData.name.trim()}
+                style={{
+                  background: hotspotFormData.name.trim() ? '#28a745' : '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  cursor: hotspotFormData.name.trim() ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <Save size={16} style={{ marginRight: '4px' }} />
+                Save Hotspot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Bar */}
+      <div style={{
+        position: 'absolute',
+        bottom: '0',
+        left: '0',
+        right: '0',
+        background: 'rgba(0,0,0,0.8)',
+        color: 'white',
+        padding: '0.5rem 1rem',
+        fontSize: '0.8rem',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        zIndex: 1000
+      }}>
+        <div>
+          Vessels: {vessels.length} • 
+          Zones: {sensitiveZones.length} • 
+          Hotspots: {hotspots.length} • 
+          Zoom: {currentZoom}
+        </div>
+        
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: isSimulating ? '#28a745' : '#dc3545',
+            marginRight: '6px'
+          }} />
+          {isSimulating ? 'Live Tracking' : 'Paused'}
+        </div>
+      </div>
+
+      {/* Map container with dynamic cursor */}
       <div
         ref={mapRef}
         style={{
           height: '100%',
           width: '100%',
           backgroundColor: '#e9ecef',
-          borderRadius: isFullscreen ? '0' : '12px'
+          borderRadius: isFullscreen ? '0' : '12px',
+          cursor: isMarkingMode ? 'crosshair' : 'default'
         }}
       />
     </div>
