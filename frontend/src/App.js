@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import EcoComplianceHub from './pages/EcoComplianceHub';
 import TopicDetail from './pages/TopicDetail';
+import QuizPage from './pages/QuizPage';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/eco-compliance-hub" element={<EcoComplianceHub />} />
             <Route path="/topic/:topicParam" element={<TopicDetail />} />
+            <Route path="/quiz/:quizId" element={<QuizPage />} />
 
             {/* Redirect root to login */}
             <Route path="/" element={<Navigate to="/register" replace />} />
