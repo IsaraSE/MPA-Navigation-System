@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import ReportForm from './pages/ReportForm';
 import EcoComplianceHub from './pages/EcoComplianceHub';
 import TopicDetail from './pages/TopicDetail';
 
@@ -32,10 +33,11 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/report" element={<ReportForm />} />
             <Route path="/eco-compliance-hub" element={<EcoComplianceHub />} />
             <Route path="/topic/:topicParam" element={<TopicDetail />} />
 
-            {/* Redirect root to login */}
+            {/* Redirect root to register */}
             <Route path="/" element={<Navigate to="/register" replace />} />
 
             {/* Catch all route */}
