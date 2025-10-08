@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import reportService from '../services/reportService';
 import FormCard from '../components/FormCard';
 import PageHeader from '../components/PageHeader';
 import TextBox from '../components/TextBox';
@@ -20,13 +22,22 @@ import {
   MdSecurity,
   MdCalendarToday,
   MdVerified,
-  MdDirectionsBoatFilled
+  MdDirectionsBoatFilled,
+  MdLocationOn,
+  MdDelete,
+  MdVisibility,
+  MdPets,
+  MdWater,
+  MdWarning
 } from 'react-icons/md';
 
 const Profile = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [myReports, setMyReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(false);
   
   const {
     register,
@@ -56,6 +67,26 @@ const Profile = () => {
       });
     }
   }, [user, reset]);
+
+  // Load user's reports
+  useEffect(() => {
+    const fetchMyReports = async () => {
+      if (!user) return;
+      
+      try {
+        setLoadingReports(true);
+        const data = await reportService.getMyReports();
+        setMyReports(data.reports || []);
+      } catch (error) {
+        console.error('Error loading reports:', error);
+        // Don't show error toast, just log it
+      } finally {
+        setLoadingReports(false);
+      }
+    };
+
+    fetchMyReports();
+  }, [user]);
 
   const vesselTypes = [
     { value: 'cargo', label: 'Cargo' },
@@ -95,6 +126,22 @@ const Profile = () => {
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm('Are you sure you want to delete this report?')) {
+      return;
+    }
+
+    try {
+      await reportService.deleteReport(reportId);
+      toast.success('Report deleted successfully');
+      // Refresh reports list
+      setMyReports(myReports.filter(r => r._id !== reportId));
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast.error('Failed to delete report');
+    }
   };
 
   if (!user) {
@@ -309,6 +356,162 @@ const Profile = () => {
               </FormCard>
             </div>
           </div>
+        </div>
+
+        {/* My Reports Section */}
+        <div className="mt-8">
+          <FormCard className="p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <MdLocationOn className="mr-2 text-blue-600" />
+                  My Reports
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">View and manage your submitted reports</p>
+              </div>
+              <Button
+                onClick={() => navigate('/report')}
+                variant="primary"
+                size="md"
+                icon={<MdLocationOn className="h-4 w-4" />}
+              >
+                New Report
+              </Button>
+            </div>
+
+            {loadingReports ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your reports...</p>
+              </div>
+            ) : myReports.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <MdLocationOn className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">No Reports Yet</h3>
+                <p className="text-gray-500 mb-4">You haven't submitted any reports yet.</p>
+                <Button
+                  onClick={() => navigate('/report')}
+                  variant="primary"
+                  size="md"
+                  icon={<MdLocationOn className="h-4 w-4" />}
+                >
+                  Submit Your First Report
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myReports.map((report) => (
+                  <div
+                    key={report._id}
+                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        {/* Report Header */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`p-2 rounded-full ${
+                            report.type === 'hotspot' ? 'bg-green-100' : 'bg-red-100'
+                          }`}>
+                            {report.type === 'hotspot' ? (
+                              <MdPets className={`h-5 w-5 ${
+                                report.type === 'hotspot' ? 'text-green-600' : 'text-red-600'
+                              }`} />
+                            ) : (
+                              <MdWater className={`h-5 w-5 ${
+                                report.type === 'hotspot' ? 'text-green-600' : 'text-red-600'
+                              }`} />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
+                            <div className="flex gap-2 mt-1">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                report.type === 'hotspot'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {report.type === 'hotspot' ? 'Wildlife Hotspot' : 'Pollution'}
+                              </span>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                report.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                                report.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                                report.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {report.severity.charAt(0).toUpperCase() + report.severity.slice(1)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Species (if hotspot) */}
+                        {report.species && (
+                          <div className="mb-2">
+                            <span className="text-sm font-medium text-gray-700">Species: </span>
+                            <span className="text-sm text-gray-600">{report.species}</span>
+                          </div>
+                        )}
+
+                        {/* Description */}
+                        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                          {report.description}
+                        </p>
+
+                        {/* Location & Date */}
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+                          <div className="flex items-center">
+                            <MdLocationOn className="h-4 w-4 mr-1" />
+                            <span>
+                              {report.location.coordinates[1].toFixed(4)}, {report.location.coordinates[0].toFixed(4)}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <MdCalendarToday className="h-4 w-4 mr-1" />
+                            <span>
+                              {new Date(report.createdAt).toLocaleDateString()} at {new Date(report.createdAt).toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => handleDeleteReport(report._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete report"
+                        >
+                          <MdDelete className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Summary */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">{myReports.length}</div>
+                      <div className="text-sm text-gray-600">Total Reports</div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {myReports.filter(r => r.type === 'hotspot').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Wildlife Hotspots</div>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <div className="text-2xl font-bold text-red-600">
+                        {myReports.filter(r => r.type === 'pollution').length}
+                      </div>
+                      <div className="text-sm text-gray-600">Pollution Reports</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </FormCard>
         </div>
       </div>
     </div>
