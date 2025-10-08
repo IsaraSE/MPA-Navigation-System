@@ -4,6 +4,7 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 import errorHandler from "./middleware/error.js";
 
 const app = express();
@@ -22,6 +23,7 @@ app.get("/", (_req, res) => res.json({ status: "ok", service: "maritime-api" }))
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/reports", reportRoutes);
 
 // error handler last
 app.use(errorHandler);
