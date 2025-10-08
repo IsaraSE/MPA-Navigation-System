@@ -48,7 +48,7 @@ const createReportValidation = [
         .isIn(['low', 'medium', 'high', 'critical'])
         .withMessage('Severity must be low, medium, high, or critical'),
     body('imageUrl')
-        .optional()
+        .optional({ values: 'falsy' })
         .trim()
         .isURL()
         .withMessage('Invalid image URL')

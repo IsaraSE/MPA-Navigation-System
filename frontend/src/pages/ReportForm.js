@@ -214,6 +214,11 @@ const ReportForm = () => {
         longitude: parseFloat(data.longitude)
       };
       
+      // Remove imageUrl if empty
+      if (!reportData.imageUrl || reportData.imageUrl.trim() === '') {
+        delete reportData.imageUrl;
+      }
+      
       await reportService.createReport(reportData);
       toast.success(`${data.type === 'hotspot' ? 'Wildlife hotspot' : 'Pollution'} report submitted successfully!`);
       reset();
