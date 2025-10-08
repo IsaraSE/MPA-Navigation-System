@@ -207,7 +207,14 @@ const ReportForm = () => {
 
     setLoading(true);
     try {
-      await reportService.createReport(data);
+      // Convert latitude and longitude to numbers
+      const reportData = {
+        ...data,
+        latitude: parseFloat(data.latitude),
+        longitude: parseFloat(data.longitude)
+      };
+      
+      await reportService.createReport(reportData);
       toast.success(`${data.type === 'hotspot' ? 'Wildlife hotspot' : 'Pollution'} report submitted successfully!`);
       reset();
       setSelectedLocation(null);
