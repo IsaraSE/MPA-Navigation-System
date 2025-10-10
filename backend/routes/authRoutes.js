@@ -1,7 +1,7 @@
 // routes/authRoutes.js
 import { Router } from "express";
 import { body } from "express-validator";
-import { register, login, getProfile } from "../controllers/authController.js";
+import { register, login, getProfile, updateProfile, deleteProfile } from "../controllers/authController.js";
 import auth from "../middleware/auth.js";
 
 const router = Router();
@@ -29,5 +29,7 @@ router.post(
 );
 
 router.get("/getProfile", auth, getProfile);
+router.put("/updateProfile", auth, updateProfile);
+router.delete("/deleteProfile",auth, deleteProfile);
 
 export default router;

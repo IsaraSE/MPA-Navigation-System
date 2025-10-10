@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin, Bell, X, Gauge } from 'lucide-react';
+import { Navigation, Waves, AlertTriangle, ZoomIn, ZoomOut, Home, Maximize2, Minimize2, Shield, Leaf, Fish, Eye, EyeOff, ChevronDown, ChevronUp, Settings, MapPin, Bell, X, Gauge, AlertCircle, Droplet } from 'lucide-react';
+import reportService from '../services/reportService';
 
 const ShipMapWithZones = () => {
   const mapRef = useRef(null);
@@ -19,11 +20,16 @@ const ShipMapWithZones = () => {
   const [currentZoom, setCurrentZoom] = useState(2);
   const [alerts, setAlerts] = useState([]);
   const [simulationSpeed, setSimulationSpeed] = useState(1);
+  const [reports, setReports] = useState([]);
+  const [reportsVisible, setReportsVisible] = useState(true);
+  const [reportFilter, setReportFilter] = useState('all'); // 'all', 'hotspot', 'pollution'
+  const [loadingReports, setLoadingReports] = useState(false);
   const intervalRef = useRef();
   const mapInstance = useRef(null);
   const markersRef = useRef({});
   const zonesLayerRef = useRef(null);
   const zoneIconsLayerRef = useRef(null);
+  const reportsLayerRef = useRef(null);
   const alertTimeoutRef = useRef(null);
   const alertedVesselsRef = useRef(new Set()); // Track which vessels have triggered alerts
 
@@ -406,6 +412,7 @@ const ShipMapWithZones = () => {
       setMapInitialized(true);
       initializeVessels();
       loadSensitiveZones();
+      loadReports();
 
     } catch (error) {
       console.error('Map initialization error:', error);
@@ -428,6 +435,23 @@ const ShipMapWithZones = () => {
       setSensitiveZones(getFallbackSensitiveZones());
     } finally {
       setLoadingZones(false);
+    }
+  };
+
+  // Load reports from backend
+  const loadReports = async () => {
+    try {
+      setLoadingReports(true);
+      const data = await reportService.getReports({ limit: 200 });
+      setReports(data.reports || []);
+      if (mapInstance.current && data.reports) {
+        addReportsToMap(data.reports);
+      }
+    } catch (error) {
+      console.error('Error loading reports:', error);
+      setReports([]);
+    } finally {
+      setLoadingReports(false);
     }
   };
 
@@ -675,6 +699,249 @@ const ShipMapWithZones = () => {
       updateZoneDisplay(currentZoom);
     }
     setZonesVisible(!zonesVisible);
+  };
+
+  // Create report icon based on type and severity
+  const createReportIcon = (report) => {
+    if (!window.L) return null;
+
+    try {
+      const typeConfig = {
+        hotspot: { 
+          color: '#10b981', 
+          icon: '🐟',
+          bgGradient: 'linear-gradient(135deg, #10b981, #059669)'
+        },
+        pollution: { 
+          color: '#ef4444', 
+          icon: '🛢️',
+          bgGradient: 'linear-gradient(135deg, #ef4444, #dc2626)'
+        }
+      };
+
+      const severitySize = {
+        low: 28,
+        medium: 32,
+        high: 36,
+        critical: 40
+      };
+
+      const config = typeConfig[report.type] || typeConfig.hotspot;
+      const size = severitySize[report.severity] || 32;
+
+      return window.L.divIcon({
+        className: 'report-marker',
+        html: `
+          <div style="
+            background: ${config.bgGradient};
+            width: ${size}px;
+            height: ${size}px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: ${size * 0.5}px;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            ${report.severity === 'critical' ? 'animation: pulse-report 2s infinite;' : ''}
+          ">
+            ${config.icon}
+          </div>
+        `,
+        iconSize: [size, size],
+        iconAnchor: [size/2, size/2],
+        popupAnchor: [0, -size/2]
+      });
+    } catch (error) {
+      console.warn('Report icon creation error:', error);
+      return null;
+    }
+  };
+
+  // Add reports to map
+  const addReportsToMap = (reportsData) => {
+    if (!mapInstance.current || !window.L) return;
+
+    try {
+      const L = window.L;
+
+      // Remove existing reports layer
+      if (reportsLayerRef.current) {
+        mapInstance.current.removeLayer(reportsLayerRef.current);
+      }
+
+      reportsLayerRef.current = L.layerGroup();
+
+      reportsData.forEach(report => {
+        try {
+          // Apply filter
+          if (reportFilter !== 'all' && report.type !== reportFilter) {
+            return;
+          }
+
+          const [lng, lat] = report.location.coordinates;
+          
+          const icon = createReportIcon(report);
+          if (!icon) return;
+
+          const marker = L.marker([lat, lng], { icon });
+
+          // Create detailed popup
+          const severityColors = {
+            low: '#10b981',
+            medium: '#f59e0b',
+            high: '#f97316',
+            critical: '#ef4444'
+          };
+
+          const popupContent = `
+            <div style="font-family: 'Arial', sans-serif; min-width: 260px; max-width: 300px;">
+              <div style="
+                background: ${report.type === 'hotspot' ? '#10b98120' : '#ef444420'};
+                padding: 12px;
+                margin: -12px -12px 12px -12px;
+                border-radius: 8px 8px 0 0;
+                border-bottom: 3px solid ${report.type === 'hotspot' ? '#10b981' : '#ef4444'};
+              ">
+                <h3 style="margin: 0 0 8px 0; color: #1f2937; font-size: 1.1em; display: flex; align-items: center;">
+                  <span style="font-size: 1.3em; margin-right: 8px;">
+                    ${report.type === 'hotspot' ? '🐟' : '🛢️'}
+                  </span>
+                  ${report.title}
+                </h3>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <span style="
+                    background: ${report.type === 'hotspot' ? '#10b981' : '#ef4444'};
+                    color: white;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                    font-size: 0.75em;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                  ">
+                    ${report.type}
+                  </span>
+                  <span style="
+                    background: ${severityColors[report.severity]};
+                    color: white;
+                    padding: 3px 10px;
+                    border-radius: 12px;
+                    font-size: 0.75em;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                  ">
+                    ${report.severity}
+                  </span>
+                </div>
+              </div>
+              
+              ${report.species ? `
+                <div style="margin-bottom: 10px;">
+                  <strong style="color: #4b5563; font-size: 0.9em;">Species:</strong>
+                  <span style="color: #1f2937; font-size: 0.9em; margin-left: 4px;">${report.species}</span>
+                </div>
+              ` : ''}
+              
+              <div style="margin-bottom: 10px;">
+                <strong style="color: #4b5563; font-size: 0.9em;">Description:</strong>
+                <p style="color: #1f2937; margin: 4px 0 0 0; font-size: 0.85em; line-height: 1.4;">
+                  ${report.description}
+                </p>
+              </div>
+              
+              ${report.submittedBy ? `
+                <div style="margin-bottom: 10px;">
+                  <strong style="color: #4b5563; font-size: 0.9em;">Reported by:</strong>
+                  <div style="color: #1f2937; margin-top: 4px; font-size: 0.85em;">
+                    <div>${report.submittedBy.name}</div>
+                    ${report.vesselInfo?.vesselName ? `
+                      <div style="color: #6b7280; font-size: 0.9em;">
+                        ${report.vesselInfo.vesselName} (${report.vesselInfo.vesselType})
+                      </div>
+                    ` : ''}
+                  </div>
+                </div>
+              ` : ''}
+              
+              <div style="
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #e5e7eb;
+                color: #6b7280;
+                font-size: 0.75em;
+              ">
+                📅 ${new Date(report.createdAt).toLocaleDateString()} at ${new Date(report.createdAt).toLocaleTimeString()}
+              </div>
+            </div>
+          `;
+
+          marker.bindPopup(popupContent, {
+            maxWidth: 320,
+            className: 'custom-report-popup'
+          });
+
+          marker.addTo(reportsLayerRef.current);
+
+        } catch (reportError) {
+          console.warn(`Error adding report ${report._id}:`, reportError);
+        }
+      });
+
+      // Add layer to map if reports are visible
+      if (reportsVisible) {
+        reportsLayerRef.current.addTo(mapInstance.current);
+      }
+
+      // Add CSS for pulsing animation
+      if (!document.querySelector('#report-animation-styles')) {
+        const style = document.createElement('style');
+        style.id = 'report-animation-styles';
+        style.textContent = `
+          @keyframes pulse-report {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .custom-report-popup .leaflet-popup-content-wrapper {
+            border-radius: 12px;
+            padding: 0;
+          }
+          .custom-report-popup .leaflet-popup-content {
+            margin: 12px;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+    } catch (error) {
+      console.error('Error adding reports to map:', error);
+    }
+  };
+
+  // Toggle reports visibility
+  const toggleReportsVisibility = () => {
+    if (!mapInstance.current || !reportsLayerRef.current) return;
+
+    if (reportsVisible) {
+      if (mapInstance.current.hasLayer(reportsLayerRef.current)) {
+        mapInstance.current.removeLayer(reportsLayerRef.current);
+      }
+    } else {
+      if (reportsLayerRef.current) {
+        reportsLayerRef.current.addTo(mapInstance.current);
+      }
+    }
+    setReportsVisible(!reportsVisible);
+  };
+
+  // Update report filter
+  const updateReportFilter = (filter) => {
+    setReportFilter(filter);
+    // Reload reports with new filter
+    if (reports.length > 0) {
+      addReportsToMap(reports);
+    }
   };
 
   // Initialize map when ready
@@ -1335,6 +1602,99 @@ const ShipMapWithZones = () => {
               <div style={{ fontSize: '0.75rem', color: '#6c757d', marginTop: '0.5rem' }}>
                 {sensitiveZones.length} zones loaded<br/>
                 {currentZoom >= 5 ? 'Showing circles' : 'Showing icons'}
+              </div>
+            </div>
+
+            {/* Reports Control */}
+            <div style={{ borderTop: '1px solid #e9ecef', paddingTop: '1rem', marginTop: '1rem' }}>
+              <h5 style={{ margin: '0 0 0.5rem 0', color: '#2c3e50', display: 'flex', alignItems: 'center' }}>
+                <AlertCircle size={16} style={{ marginRight: '0.5rem' }} />
+                Marine Reports
+              </h5>
+              
+              <button
+                onClick={toggleReportsVisibility}
+                disabled={loadingReports}
+                style={{
+                  padding: '0.5rem 1rem',
+                  backgroundColor: reportsVisible ? '#10b981' : '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: loadingReports ? 'not-allowed' : 'pointer',
+                  fontSize: '0.875rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  width: '100%',
+                  justifyContent: 'center',
+                  marginBottom: '0.5rem'
+                }}
+              >
+                {reportsVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+                {loadingReports ? 'Loading...' : (reportsVisible ? 'Hide Reports' : 'Show Reports')}
+              </button>
+
+              {/* Report Filter */}
+              <div style={{ fontSize: '0.75rem', marginBottom: '0.5rem', fontWeight: '500', color: '#495057' }}>
+                Filter by type:
+              </div>
+              <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem' }}>
+                <button
+                  onClick={() => updateReportFilter('all')}
+                  style={{
+                    flex: 1,
+                    padding: '0.375rem 0.5rem',
+                    backgroundColor: reportFilter === 'all' ? '#3b82f6' : '#e9ecef',
+                    color: reportFilter === 'all' ? 'white' : '#495057',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => updateReportFilter('hotspot')}
+                  style={{
+                    flex: 1,
+                    padding: '0.375rem 0.5rem',
+                    backgroundColor: reportFilter === 'hotspot' ? '#10b981' : '#e9ecef',
+                    color: reportFilter === 'hotspot' ? 'white' : '#495057',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🐟 Wildlife
+                </button>
+                <button
+                  onClick={() => updateReportFilter('pollution')}
+                  style={{
+                    flex: 1,
+                    padding: '0.375rem 0.5rem',
+                    backgroundColor: reportFilter === 'pollution' ? '#ef4444' : '#e9ecef',
+                    color: reportFilter === 'pollution' ? 'white' : '#495057',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.75rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🛢️ Pollution
+                </button>
+              </div>
+
+              <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                {reports.length} reports loaded
               </div>
             </div>
           </div>
