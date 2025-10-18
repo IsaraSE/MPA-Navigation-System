@@ -351,7 +351,7 @@ const Register = () => {
               </div>
 
               {/* Login Link */}
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
                   <Link
@@ -359,6 +359,15 @@ const Register = () => {
                     className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline"
                   >
                     Sign in here
+                  </Link>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Want to view your profile?{' '}
+                  <Link
+                    to="/profile"
+                    className="font-semibold text-cyan-600 hover:text-cyan-500 transition-colors duration-200 hover:underline"
+                  >
+                    View Profile
                   </Link>
                 </p>
               </div>

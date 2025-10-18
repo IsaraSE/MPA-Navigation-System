@@ -9,7 +9,9 @@ export default async function auth(req, res, next) {
         
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(payload.sub);
-        return res.status(401).json({message: "Unauthorized: Invalid user"});
+        if (!user) {
+            return res.status(401).json({message: "Unauthorized: Invalid user"});
+        }
 
         req.user = user;
         next();
