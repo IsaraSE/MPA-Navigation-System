@@ -29,7 +29,7 @@ const EcoComplianceHub = () => {
 
   const handleTopicClick = (topic) => {
     // Fixed navigation: pass topicId to TopicDetail
-    navigate('/topic-detail', { state: { topicId: topic.id } });
+    navigate('/topic/:topicParam-detail', { state: { topicId: topic.id } });
   };
 
   useEffect(() => {
